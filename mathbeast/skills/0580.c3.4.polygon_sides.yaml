@@ -1,0 +1,15 @@
+id: 0580.c3.4.polygon_sides
+syllabus: C3.4
+tier: core
+title: Finding the number of sides
+statement: "The interior angles of a polygon add up to {deg}°. Find how many sides it has."
+answer: "{deg}/180 + 2"
+answer_form: exact
+transform: exact
+rationale: "C3.4: the inverse of the angle sum. Rearrange (n - 2) × 180 = total."
+params:
+  n: { dist: int, range: [5, 14] }
+  deg: { dist: derive, template: "({n}-2)*180" }
+steps:
+  - "Divide the total by 180 to remove the factor."
+  - "That gives n - 2 = {deg}/180, so n = {n}."

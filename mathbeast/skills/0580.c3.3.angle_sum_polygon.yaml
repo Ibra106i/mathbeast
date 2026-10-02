@@ -1,0 +1,15 @@
+id: 0580.c3.3.angle_sum_polygon
+syllabus: C3.3
+tier: core
+title: Sum of the interior angles of a polygon
+statement: "Find the sum of the interior angles of a polygon with {n} sides."
+answer: "({n}-2)*180"
+answer_form: exact
+transform: exact
+rationale: "C3.3: the sum is (n - 2) × 180° for an n-sided polygon."
+params:
+  n: { dist: int, range: [5, 14] }
+  deg: { dist: derive, template: "({n}-2)*180" }
+steps:
+  - "Draw diagonals from one vertex to split the polygon into triangles."
+  - "That gives {n} - 2 triangles, so the sum is ({n} - 2) × 180 = {deg}°."

@@ -1,0 +1,16 @@
+id: 0580.c3.5.isosceles_triangle
+syllabus: C3.5
+tier: core
+title: Angles in an isosceles triangle
+statement: "An isosceles triangle has an apex angle of {a}°. Find each of the two base angles."
+answer: "(180-{a})/2"
+answer_form: exact
+transform: exact
+rationale: "C3.5: base angles are equal, so each is half of what is left."
+params:
+  a: { dist: int, range: [20, 120] }
+  base: { dist: derive, template: "(180-{a})/2" }
+  left: { dist: derive, template: "180-{a}" }
+steps:
+  - "The two base angles are equal."
+  - "They share 180 - {a} = {left}°, so each is {left}/2 = {base}°."

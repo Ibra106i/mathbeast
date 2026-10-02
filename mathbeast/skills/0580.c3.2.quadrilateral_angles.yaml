@@ -1,0 +1,17 @@
+id: 0580.c3.2.quadrilateral_angles
+syllabus: C3.2
+tier: core
+title: Angles in a quadrilateral
+statement: "Three angles of a quadrilateral are {a}°, {b}° and {c}°. Find the fourth angle."
+answer: "360-{a}-{b}-{c}"
+answer_form: exact
+transform: exact
+rationale: "C3.2: angles in a quadrilateral add to 360°."
+params:
+  a: { dist: int, range: [60, 130] }
+  b: { dist: int, range: [60, 130] }
+  c: { dist: int, range: [40, 100] }
+  fourth: { dist: derive, template: "360-{a}-{b}-{c}" }
+steps:
+  - "Angles in a quadrilateral add to 360°."
+  - "So the fourth angle is 360 - {a} - {b} - {c} = {fourth}."

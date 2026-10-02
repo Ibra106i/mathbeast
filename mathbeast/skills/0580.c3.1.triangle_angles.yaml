@@ -1,0 +1,16 @@
+id: 0580.c3.1.triangle_angles
+syllabus: C3.1
+tier: core
+title: Angles in a triangle
+statement: "Two angles of a triangle are {a}° and {b}°. Find the third angle."
+answer: "180-{a}-{b}"
+answer_form: exact
+transform: exact
+rationale: "C3.1: angles in a triangle sum to 180°."
+params:
+  a: { dist: int, range: [20, 90] }
+  b: { dist: int, range: [20, 110] }
+  third: { dist: derive, template: "180-{a}-{b}" }
+steps:
+  - "Angles in a triangle add to 180°."
+  - "So the third angle is 180 - {a} - {b} = {third}."
