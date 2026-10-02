@@ -1,0 +1,17 @@
+id: 0580.c7.1.probability_single
+syllabus: C7.1
+tier: core
+title: Probability of a single event
+statement: "A bag holds {r} red counters and {b} blue counters. One counter is taken at random. Find the probability that it is red, as a fraction."
+answer: "{r}/({r}+{b})"
+answer_form: exact
+transform: exact
+rationale: "C7.1: probability is favourable outcomes over all outcomes."
+params:
+  r: { dist: int, range: [1, 9] }
+  b: { dist: int, range: [1, 12] }
+  total: { dist: derive, template: "{r}+{b}" }
+steps:
+  - "Total counters: {r} + {b} = {total}."
+  - "Favourable counters: {r}."
+  - "So the probability is {r}/{total}."

@@ -52,11 +52,25 @@ def test_skill_id_must_be_a_syllabus_reference() -> None:
         make(id="quadratics")
 
 
-def test_tier_must_agree_with_the_syllabus_code() -> None:
-    with pytest.raises(SkillError, match="implies a C-code"):
-        make(id="0580.c2.1.demo", syllabus="E2.1", tier="core")
-    with pytest.raises(SkillError, match="implies a E-code"):
-        make(id="0580.e2.1.demo", syllabus="C2.1", tier="extended")
+def test_tier_must_agree_with_the_syllabus_section() -> None:
+    """E-sections are Extended-only; C-sections may hold either tier.
+
+    0580 marks Extended-only content inside Core sections, so the implication
+    is one-way. A check that assumed otherwise rejected a correct skill.
+    """
+    with pytest.raises(SkillError, match="Extended-only"):
+        make(id="0580.e2.1.demo", syllabus="E2.1", tier="core")
+    # Extended content inside a Core section is legitimate.
+    assert make(id="0580.c8.4.demo", syllabus="C8.4", tier="extended").id
+
+
+@pytest.mark.parametrize(
+    ("section", "tier"),
+    [("C99", "core"), ("C0", "core"), ("E9", "extended"), ("E0", "extended")],
+)
+def test_unknown_syllabus_sections_are_rejected(section: str, tier: str) -> None:
+    with pytest.raises(SkillError, match="not a 0580 section"):
+        make(id=f"0580.{section.lower()}.1.demo", syllabus=section, tier=tier)
 
 
 def test_unknown_transform_is_rejected() -> None:

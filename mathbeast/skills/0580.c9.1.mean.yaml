@@ -1,0 +1,18 @@
+id: 0580.c9.1.mean
+syllabus: C9.1
+tier: core
+title: Finding the mean
+statement: "Find the mean of {a}, {b}, {c} and {d}."
+answer: "({a}+{b}+{c}+{d})/4"
+answer_form: exact
+transform: exact
+rationale: "C9.1: add the values and divide by how many there are."
+params:
+  a: { dist: int, range: [1, 30] }
+  b: { dist: int, range: [1, 30] }
+  c: { dist: int, range: [1, 30] }
+  d: { dist: int, range: [1, 30] }
+  total: { dist: derive, template: "{a}+{b}+{c}+{d}" }
+steps:
+  - "Add the four values: {a} + {b} + {c} + {d} = {total}."
+  - "Divide by 4 to get the mean."

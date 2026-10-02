@@ -1,0 +1,19 @@
+id: 0580.c8.4.probability_at_least_one
+syllabus: C8.4
+tier: extended
+title: Probability of at least one success
+statement: "An event has probability {p}/{q}. If it is tried {n} independent times, find the probability that it happens at least once, as a fraction."
+answer: "1-(1-{p}/{q})^{n}"
+answer_form: exact
+transform: exact
+rationale: "E7.3: P(at least one) = 1 - P(none). Each spin is independent."
+params:
+  p: { dist: int, range: [1, 4] }
+  k: { dist: int, range: [2, 5] }
+  q: { dist: derive, template: "{p}*{k}" }
+  n: { dist: int, range: [2, 4] }
+  step: { dist: choice, options: [1, 2, 3] }
+steps:
+  - "P(none in one try) = 1 - {p}/{q}."
+  - "Over {n} independent tries, P(none) = (1 - {p}/{q})^{n}."
+  - "Subtract from 1 to get P(at least one)."

@@ -1,0 +1,16 @@
+id: 0580.c7.2.probability_complement
+syllabus: C7.2
+tier: core
+title: Probability of the event not happening
+statement: "The probability of an event is {p}/{q}. Find the probability that it does not happen, as a fraction."
+answer: "1-{p}/{q}"
+answer_form: exact
+transform: exact
+rationale: "C7.2: P(not the event) = 1 - P(the event)."
+params:
+  p: { dist: int, range: [1, 4] }
+  k: { dist: int, range: [2, 8] }
+  q: { dist: derive, template: "{p}*{k}" }
+steps:
+  - "The event and its opposite together make 1."
+  - "So 1 - {p}/{q} is the probability it does not happen."

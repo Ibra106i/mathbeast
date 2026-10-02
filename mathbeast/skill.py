@@ -336,6 +336,11 @@ def _deps(text: str) -> set[str]:
 # --- the skill --------------------------------------------------------------
 
 
+#: 0580's topic sections. C1-C9 are shared; E1-E5 carry Extended-only content.
+VALID_SECTIONS = frozenset(
+    [f"C{i}" for i in range(1, 10)] + [f"E{i}" for i in range(1, 6)]
+)
+
 _REQUIRED = ("id", "syllabus", "tier", "title", "statement", "answer_form", "answer")
 
 
@@ -377,11 +382,23 @@ class Skill:
             )
         if data["tier"] not in ("core", "extended"):
             raise SkillError(f"{data['id']}: tier must be 'core' or 'extended'")
-        prefix = {"core": "C", "extended": "E"}[data["tier"]]
-        if not str(data["syllabus"]).upper().startswith(prefix):
+
+        # 0580 marks Extended-only content *inside* Core sections -- the
+        # specification literally says "C8.4 Extended content only". So the
+        # implication only runs one way: an E-section is Extended-only, but a
+        # C-section may hold either tier. The reverse is not true, and an
+        # earlier version of this check asserted it, which rejected a correct
+        # probability skill.
+        section = str(data["syllabus"]).split(".")[0].upper()
+        if section not in VALID_SECTIONS:
             raise SkillError(
-                f"{data['id']}: tier {data['tier']!r} implies a {prefix}-code, "
-                f"but syllabus is {data['syllabus']!r}"
+                f"{data['id']}: {section!r} is not a 0580 section; "
+                f"expected one of {sorted(VALID_SECTIONS)}"
+            )
+        if section.startswith("E") and data["tier"] != "extended":
+            raise SkillError(
+                f"{data['id']}: section {section} is Extended-only, so the tier "
+                f"must be 'extended', not {data['tier']!r}"
             )
 
     # -- generation ----------------------------------------------------------

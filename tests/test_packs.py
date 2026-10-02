@@ -35,10 +35,19 @@ def test_skill_ids_are_unique() -> None:
 
 
 def test_every_syllabus_code_is_a_real_0580_section() -> None:
-    valid = {f"C{i}" for i in range(1, 10)} | {f"E{i}" for i in range(1, 6)}
+    from mathbeast.skill import VALID_SECTIONS
+
     for skill in ALL_SKILLS:
         section = skill.syllabus.split(".")[0].upper()
-        assert section in valid, f"{skill.id}: unknown section {section}"
+        assert section in VALID_SECTIONS, f"{skill.id}: unknown section {section}"
+
+
+def test_extended_only_sections_are_tagged_extended() -> None:
+    from mathbeast.skill import Tier
+
+    for skill in ALL_SKILLS:
+        if skill.syllabus.split(".")[0].upper().startswith("E"):
+            assert skill.tier is Tier.EXTENDED, f"{skill.id} sits in an E-section"
 
 
 def test_core_content_is_also_present_in_extended() -> None:

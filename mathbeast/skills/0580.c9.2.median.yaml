@@ -1,0 +1,22 @@
+id: 0580.c9.2.median
+syllabus: C9.2
+tier: core
+title: Finding the median
+statement: "Find the median of {lo2}, {lo1}, {mid}, {hi1}, {hi2}."
+answer: "{mid}"
+answer_form: exact
+transform: exact
+rationale: "C9.2: with five ordered values the median is the middle one. The values are built around a chosen middle so the ordering is always genuinely increasing."
+params:
+  mid: { dist: int, range: [15, 60] }
+  d1: { dist: int, range: [2, 9] }
+  d2: { dist: int, range: [2, 9] }
+  e1: { dist: int, range: [2, 9] }
+  e2: { dist: int, range: [2, 9] }
+  lo1: { dist: derive, template: "{mid}-{d1}" }
+  lo2: { dist: derive, template: "{lo1}-{d2}" }
+  hi1: { dist: derive, template: "{mid}+{e1}" }
+  hi2: { dist: derive, template: "{hi1}+{e2}" }
+steps:
+  - "There are five values, so the median is the third."
+  - "The third value is {mid}."
