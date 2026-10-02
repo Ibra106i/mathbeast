@@ -1,0 +1,19 @@
+id: 0580.c2.10.expand_quadratic
+syllabus: C2.10
+tier: core
+title: Expanding two brackets
+statement: "Expand {expr}."
+answer_form: exact
+transform: expand
+answer: "({v} + {p})({v} + {q})"
+rationale: "Multiply out each bracket in turn, then collect like terms."
+params:
+  v: { dist: const, value: x }
+  p: { dist: int, range: [1, 12] }
+  q: { dist: int, range: [1, 12] }
+  psum: { dist: derive, template: "{p} + {q}" }
+  prod: { dist: derive, template: "{p} * {q}" }
+steps:
+  - "Multiply {v} by each term in turn to get {v}**2 + {p}{v} + {q}{v} + {prod}."
+  - "Collect the {v} terms: {p} + {q} = {psum}, so the {v} coefficient is {psum}."
+  - "The constant term is {p} * {q} = {prod}."
