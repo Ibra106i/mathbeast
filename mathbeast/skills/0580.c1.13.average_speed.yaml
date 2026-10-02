@@ -1,0 +1,15 @@
+id: 0580.c1.13.average_speed
+syllabus: C1.13
+tier: core
+title: Average speed
+statement: "A car travels {d} km in {t} hours. Find its average speed in km/h."
+answer: "{d}/{t}"
+answer_form: exact
+transform: exact
+rationale: "C1.13: speed, including the units km/h."
+params:
+  d: { dist: choice, options: [120, 180, 240, 300, 360, 450] }
+  t: { dist: choice, options: [2, 3, 4, 5, 6] }
+steps:
+  - "Average speed is distance divided by time."
+  - "So the speed is {d}/{t} km/h."

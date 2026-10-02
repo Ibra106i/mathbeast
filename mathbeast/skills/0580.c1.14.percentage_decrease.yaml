@@ -1,0 +1,16 @@
+id: 0580.c1.14.percentage_decrease
+syllabus: C1.14
+tier: core
+title: Percentage decrease
+statement: "Decrease {n} by {p}%."
+answer: "{n}*(100-{p})/100"
+answer_form: exact
+transform: exact
+rationale: "C1.14: percentage changes. Discounts and reductions sit here."
+params:
+  p: { dist: choice, options: [10, 20, 25, 40, 50, 75] }
+  k: { dist: choice, options: [5, 8, 10, 15, 20, 25, 40, 50] }
+  n: { dist: derive, template: "20*{k}" }
+steps:
+  - "A fall of {p}% means subtracting {p}/100 of {n}."
+  - "So the new amount is {n} * (100 - {p})/100."

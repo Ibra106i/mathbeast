@@ -1,0 +1,16 @@
+id: 0580.c1.11.percentage_increase
+syllabus: C1.11
+tier: core
+title: Percentage increase
+statement: "Increase {n} by {p}%."
+answer: "{n}*(100+{p})/100"
+answer_form: exact
+transform: exact
+rationale: "C1.11: percentage changes. Increase means adding, not multiplying by {p}."
+params:
+  p: { dist: choice, options: [10, 20, 25, 40, 50, 80] }
+  k: { dist: choice, options: [5, 8, 10, 15, 20, 25, 40, 50] }
+  n: { dist: derive, template: "20*{k}" }
+steps:
+  - "A rise of {p}% means adding {p}/100 of {n}."
+  - "So the new amount is {n} * (100 + {p})/100."
