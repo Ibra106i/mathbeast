@@ -1,0 +1,14 @@
+id: 0580.c1.1.square_roots
+syllabus: C1.1
+tier: core
+title: Square roots of perfect squares
+statement: "Write down the value of √{n}."
+answer: "sqrt({n})"
+answer_form: exact
+transform: exact
+rationale: "Recall of square roots from 1 to 15, matching C1.1."
+params:
+  n: { dist: int, range: [1, 15] }
+steps:
+  - "Which number squared gives {n}?"
+  - "That number is the square root."

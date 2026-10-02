@@ -1,0 +1,16 @@
+id: 0580.c1.3.rounding
+syllabus: C1.3
+tier: core
+title: Rounding to significant figures
+statement: "Round {x} to {sf} significant figures."
+answer: "{x}"
+answer_form: rounded
+spec: "{sf}sf"
+transform: exact
+rationale: "C1.3: give approximations to a specified number of significant figures."
+params:
+  x: { dist: choice, options: [1234.5, 0.03742, 98765, 2.71828, 0.0008156, 6043.7, 41.826] }
+  sf: { dist: int, range: [1, 4] }
+steps:
+  - "Count {sf} significant figures from the left."
+  - "Look at the next digit to decide whether to round up."

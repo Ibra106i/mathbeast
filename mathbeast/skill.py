@@ -78,6 +78,18 @@ def _t_sqrt(expr):
     return sympy.sqrt(expr)
 
 
+def _t_sort_set(value):
+    """Order a list of values ascending. Pairs with AnswerForm.SET.
+
+    Answer templates for ordering questions are list literals such as
+    `[3, 1, 2]`, so this transform receives a Python list rather than an
+    expression. Transforms are not required to take expressions.
+    """
+    if not isinstance(value, (list, tuple)):
+        raise SkillError("sort_set expects a list, e.g. answer: '[3, 1, 2]'")
+    return sorted(value)
+
+
 def _t_substitute(expr, var: str = "x", value=2):
     return expr.subs(sympy.Symbol(var), value)
 
@@ -96,10 +108,11 @@ TRANSFORMS: dict[str, Callable[[Any], Any]] = {
     "diff": _t_diff,
     "integrate": _t_integrate,
     "sqrt": _t_sqrt,
+    "sort_set": _t_sort_set,
 }
 
 #: Transforms that produce a list of values, so the skill's answer form must be SET.
-_SET_TRANSFORMS = {"solve", "roots"}
+_SET_TRANSFORMS = {"solve", "roots", "sort_set"}
 
 
 class SkillError(ValueError):
@@ -120,6 +133,10 @@ class Step:
     text: str
     expr_from: str = ""
     expr_to: str = ""
+    #: The unevaluated question expression. `expr_from` is parsed with
+    #: `evaluate=True`, so `14**2` would collapse to `196` and lose the input
+    #: that a narration is entitled to mention.
+    expr_raw: str = ""
 
 
 @dataclass(frozen=True)
@@ -293,7 +310,12 @@ class Skill:
         # skill states the expression once. Otherwise the statement and the
         # answer can drift apart silently -- author writes (x+3)(x+5) in one
         # place and (x+4)(x+6) in the other, and every problem ships wrong.
-        values["expr"] = _render(str(self.raw["answer"]), values)
+        #
+        # `display` overrides how the question is *written*. It matters because
+        # `13^2` is Python's bitwise xor, not a square: parsing a display string
+        # as maths would silently produce 15. `13 squared` in prose has no such
+        # trap.
+        values["expr"] = _render(str(self.raw.get("display", self.raw["answer"])), values)
         statement = _render(self.raw["statement"], values)
 
         answer_value = TRANSFORMS[self.transform](answer_expr)
@@ -306,6 +328,7 @@ class Skill:
                 text=_render(template, values),
                 expr_from=sympy.sstr(answer_expr),
                 expr_to=sympy.sstr(answer_value),
+                expr_raw=raw_answer,
             )
             for i, template in enumerate(self.step_templates)
         )
@@ -317,6 +340,7 @@ class Skill:
                     text=self.rationale or f"Work in from {answer_text}.",
                     expr_from=sympy.sstr(answer_expr),
                     expr_to=sympy.sstr(answer_value),
+                    expr_raw=raw_answer,
                 ),
             )
 
@@ -327,7 +351,10 @@ class Skill:
             title=self.title,
             statement=statement,
             answer_form=self.answer_form,
-            spec=self.spec,
+            # `spec` may reference parameters, e.g. `spec: "{sf}sf"` for a
+            # rounding question. It has to be resolved per-problem, not read
+            # off the raw file.
+            spec=_substitute(self.spec, values) if self.spec else self.spec,
             answer=answer_text,
             steps=steps,
             seed=seed if seed is not None else -1,
@@ -362,10 +389,18 @@ class Skill:
 def _format_answer(value: Any) -> str:
     """Render an answer as text a student would type."""
     if isinstance(value, (list, tuple, set)):
-        return ", ".join(sympy.sstr(v) for v in value)
+        return ", ".join(_format_answer(v) for v in value)
+    if isinstance(value, float):
+        return f"{value:.10g}"
     if isinstance(value, sympy.Basic):
         if value.is_Float:
             return f"{float(value):.10g}"
+        # 0.03742 parses to an exact Rational, which reads as 1871/50000 rather
+        # than the decimal the question used. Show it as a decimal when its
+        # denominator has no prime factors other than 2 and 5.
+        if value.is_Rational and not value.is_Integer:
+            if set(sympy.factorint(value.q)) <= {2, 5}:
+                return f"{float(value):.10g}"
         return sympy.sstr(value)
     return str(value)
 

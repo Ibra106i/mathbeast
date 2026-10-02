@@ -1,0 +1,14 @@
+id: 0580.c1.1.squares
+syllabus: C1.1
+tier: core
+title: Squares of small numbers
+statement: "Write down the value of {n} squared."
+answer: "{n}**2"
+answer_form: exact
+transform: exact
+rationale: "Recall of squares from 1 to 15 is examinable without a calculator."
+params:
+  n: { dist: int, range: [1, 15] }
+steps:
+  - "Recall the square of {n}."
+  - "So {n} squared is {n} * {n} = {n}**2."

@@ -1,0 +1,14 @@
+id: 0580.c1.7.index_eval
+syllabus: C1.7
+tier: core
+title: Evaluating indices
+statement: "Evaluate {base}^{power}."
+answer: "{base}**({power})"
+answer_form: exact
+transform: exact
+rationale: "C1.7: understand and use indices, positive, zero and negative."
+params:
+  base: { dist: int, range: [2, 12] }
+  power: { dist: choice, options: [0, 1, 2, 3, 4, -1, -2] }
+steps:
+  - "A power of {power} means {base} is used {power} time(s)."

@@ -1,0 +1,16 @@
+id: 0580.c1.2.standard_form
+syllabus: C1.2
+tier: core
+title: Converting standard form to an ordinary number
+statement: "Write down the value of {expr}."
+display: "{m} × 10^{k}"
+answer: "{m}*10**({k})"
+answer_form: exact
+transform: exact
+rationale: "C1.2: convert numbers out of standard form."
+params:
+  m: { dist: int, range: [1, 9] }
+  k: { dist: int, range: [-2, 6] }
+steps:
+  - "In standard form the first number moves the decimal point {k} place(s) left."
+  - "So the value is {m} × 10^{k} written out in full."

@@ -1,0 +1,17 @@
+id: 0580.c1.6.ordering
+syllabus: C1.6
+tier: core
+title: Ordering quantities by magnitude
+statement: "Put these numbers in increasing order: {expr}"
+display: "{a}, {b}, {c}"
+answer: "[{c}, {a}, {b}]"
+answer_form: set
+transform: sort_set
+rationale: "C1.6: order quantities by magnitude."
+params:
+  a: { dist: int, range: [1, 40] }
+  b: { dist: int, range: [41, 90] }
+  c: { dist: choice, options: [0.5, 0.05, 0.005, 12.5] }
+steps:
+  - "Compare the size of each number."
+  - "The smallest value here is {c}."

@@ -40,8 +40,10 @@ from mathbeast.verify import ParseRejected, normalise, to_expr
 # A maximal run of characters that could form a mathematical claim.
 # `\*\*` is listed before `*` so that `x**2 + 3x` is captured whole rather than
 # being split at the exponent, which silently truncates the claim.
+# A decimal point continues a run only when a digit follows it, so `0.05` stays
+# whole while the full stop in "196. The value is" ends it.
 _MATHS_RUN = re.compile(
-    r"[0-9A-Za-z_()]+(?:\s*(?:\*\*|[-+*/^])\s*[0-9A-Za-z_()]+)*"
+    r"[0-9A-Za-z_()]+(?:\s*(?:\*\*|[-+*/^])\s*[0-9A-Za-z_()]+|\s*\.\s*\d+)*"
 )
 _HAS_DIGIT = re.compile(r"\d")
 _HAS_OPERATOR = re.compile(r"[-+*/^=<>]")
@@ -119,18 +121,26 @@ def _expressions_in(expression: str) -> list:
     narrator saying "the coefficient is 14" is naming an atom, and that is fine;
     saying "the coefficient is 9" is not.
     """
+    if isinstance(expression, (list, tuple)):
+        out: list = []
+        for item in expression:
+            out.extend(_expressions_in(str(item)))
+        return out
+
     try:
         expr = to_expr(expression)
     except (ParseRejected, SyntaxError, TypeError, AttributeError, KeyError):
         return []
 
+    if not isinstance(expr, sympy.Basic):
+        return []
+
     pieces = {expr}
     pieces.update(expr.atoms(sympy.Number))
-    if isinstance(expr, sympy.Basic):
-        for arg in getattr(expr, "args", ()):
-            pieces.add(arg)
-            if isinstance(arg, sympy.Basic):
-                pieces.update(arg.atoms(sympy.Number))
+    for arg in getattr(expr, "args", ()):
+        pieces.add(arg)
+        if isinstance(arg, sympy.Basic):
+            pieces.update(arg.atoms(sympy.Number))
     return list(pieces)
 
 
@@ -152,11 +162,21 @@ def _claim_in(claim: str, trusted: list) -> bool:
 
 
 def _step_trust(step: Step) -> list:
+    """What this step's narration is allowed to mention.
+
+    Note what is *not* done here: the step's prose is never handed to the
+    expression parser whole. `parse_expr` applies implicit multiplication, so
+    "Recall the square of 14" parses successfully into nonsense like
+    `14.0*R*e*c*a*l*l*...` -- every letter glued into one product. Prose is
+    therefore mined with `extract_claims`, which has the digit/operator rule,
+    and each extracted claim is parsed individually.
+    """
     trusted: list = []
-    for source in (step.expr_from, step.expr_to, step.text):
-        if not source:
-            continue
-        trusted.extend(_expressions_in(source))
+    for source in (step.expr_from, step.expr_to, step.expr_raw):
+        if source:
+            trusted.extend(_expressions_in(source))
+    for claim in extract_claims(step.text):
+        trusted.extend(_expressions_in(claim))
     return trusted
 
 
