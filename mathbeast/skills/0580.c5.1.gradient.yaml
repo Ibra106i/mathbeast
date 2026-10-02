@@ -1,0 +1,17 @@
+id: 0580.c5.1.gradient
+syllabus: C5.1
+tier: core
+title: Gradient of a straight line
+statement: "Find the gradient of the line through ({x1}, {y1}) and ({x2}, {y2})."
+answer: "({y2}-{y1})/({x2}-{x1})"
+answer_form: exact
+transform: exact
+rationale: "C5.1: gradient is the change in y over the change in x."
+params:
+  x1: { dist: int, range: [-10, 6] }
+  y1: { dist: int, range: [-10, 10] }
+  x2: { dist: int, range: [7, 15] }
+  y2: { dist: int, range: [-10, 10] }
+steps:
+  - "Change in y is {y2} - {y1}; change in x is {x2} - {x1}."
+  - "Divide: the gradient is ({y2} - {y1})/({x2} - {x1})."

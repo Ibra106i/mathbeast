@@ -24,6 +24,7 @@ from enum import Enum
 import sympy
 
 from mathbeast.verify import (
+    DEFAULT_TIMEOUT,
     CheckResult,
     ParseRejected,
     Verdict,
@@ -40,6 +41,7 @@ class AnswerForm(Enum):
     ROUNDED = "rounded"
     SET = "set"
     INTERVAL = "interval"
+    PAIR = "pair"
 
 
 _PRECISION_RE = re.compile(r"^\s*(\d+)\s*(sf|dp)\s*$", re.IGNORECASE)
@@ -268,6 +270,46 @@ def _to_interval(text: str, variable: str):
     raise ParseRejected(f"{text!r} is not an interval")
 
 
+def _to_pair(text: str):
+    """An ordered pair, written `(a, b)` or bare `a, b`.
+
+    Ordered, not a set: for the midpoint of (2, 3) and (8, 7), the answer is
+    (5, 5), and (5, 5) would also be a valid *set* answer for a different
+    question. Coordinate geometry depends on the pairing surviving.
+    """
+    cleaned = normalise(text).strip()
+    if cleaned.startswith("(") and cleaned.endswith(")"):
+        cleaned = cleaned[1:-1]
+    parts = _split_top_level(cleaned)
+    if len(parts) != 2:
+        raise ParseRejected(f"{text!r} is not an ordered pair")
+    return tuple(to_expr(p) for p in parts)
+
+
+def check_pair(expected: str, given: str, spec: str | None = None) -> CheckResult:
+    """Compare ordered pairs elementwise."""
+    try:
+        want = _to_pair(expected)
+        got = _to_pair(given)
+    except (ParseRejected, TypeError, ValueError, SyntaxError) as exc:
+        return CheckResult(Verdict.UNPARSEABLE, expected, given, str(exc))
+
+    verdicts: list[Verdict] = []
+    for index, (a, b) in enumerate(zip(want, got)):
+        component = verify(
+            sympy.sstr(a), sympy.sstr(b), timeout=DEFAULT_TIMEOUT
+        ).verdict
+        if component is Verdict.UNKNOWN:
+            return CheckResult(
+                Verdict.UNKNOWN, expected, given, f"coordinate {index + 1} undecided"
+            )
+        verdicts.append(component)
+
+    if all(v is Verdict.PROVEN_EQUAL for v in verdicts):
+        return CheckResult(Verdict.PROVEN_EQUAL, expected, given, "identical coordinates")
+    return CheckResult(Verdict.PROVEN_DIFFERENT, expected, given, "coordinates differ")
+
+
 def check(expected: str, given: str, form: AnswerForm, spec: str | None = None) -> CheckResult:
     """Dispatch to the comparator for the question's answer form."""
     if form is AnswerForm.EXACT:
@@ -278,4 +320,6 @@ def check(expected: str, given: str, form: AnswerForm, spec: str | None = None) 
         return check_set(expected, given, spec)
     if form is AnswerForm.INTERVAL:
         return check_interval(expected, given, spec)
+    if form is AnswerForm.PAIR:
+        return check_pair(expected, given, spec)
     raise ValueError(f"unhandled answer form {form!r}")

@@ -1,0 +1,17 @@
+id: 0580.c6.1.sin_angle
+syllabus: C6.1
+tier: core
+title: Finding sine of an angle
+statement: "In a right-angled triangle the side opposite the marked angle is {o}, the adjacent side is {a}, and the hypotenuse is {c}. Find sin of the marked angle to 3 significant figures."
+answer: "{o}/{c}"
+answer_form: rounded
+spec: "3sf"
+transform: numeric
+rationale: "C6.1: sin = opposite / hypotenuse."
+params:
+  o: { dist: int, range: [2, 20] }
+  a: { dist: int, range: [2, 20] }
+  c: { dist: derive, template: "sqrt({o}**2 + {a}**2)" }
+steps:
+  - "sin is the opposite side divided by the hypotenuse."
+  - "So sin = {o}/{c}."
