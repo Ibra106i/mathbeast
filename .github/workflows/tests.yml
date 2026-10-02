@@ -1,0 +1,28 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows and macOS included deliberately: the audience for a
+        # pip-installable local tool is not on Windows, and a canary that only
+        # ever runs on Linux proves nothing about the other two.
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Report the CAS version the guarantee rests on
+        run: python -c "import sympy; print('sympy', sympy.__version__)"
+      - run: pytest -q

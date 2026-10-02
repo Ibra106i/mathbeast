@@ -111,11 +111,13 @@ class NarrationReport:
         if not self.bound:
             return f"unbound: {'; '.join(self.binding_errors)}"
         if not self.unsupported:
-            skipped = len(self.claims) - len(self.evaluable)
-            note = f" ({skipped} unevaluable fragment(s) ignored)" if skipped else ""
-            return f"grounded ({len(self.evaluable)} claims checked{note})"
+            count = len(self.evaluable)
+            skipped = len(self.claims) - count
+            note = f", {skipped} unevaluable fragment(s) ignored" if skipped else ""
+            return f"grounded ({count} claim{'s' if count != 1 else ''} checked{note})"
         flagged = ", ".join(f"{c.text!r} @step{c.step_id}" for c in self.unsupported[:5])
-        return f"{len(self.unsupported)} unsupported claim(s): {flagged}"
+        noun = "claim" if len(self.unsupported) == 1 else "claims"
+        return f"{len(self.unsupported)} unsupported {noun}: {flagged}"
 
 
 def extract_claims(text: str) -> list[str]:

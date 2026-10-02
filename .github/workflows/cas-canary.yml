@@ -1,0 +1,46 @@
+name: cas-canary
+
+# The correctness guarantee is a claim about a specific SymPy version. SymPy
+# does not promise a stable answer surface across releases, and when it changes
+# behaviour it computes differently rather than raising -- so a silent
+# regression is the default failure mode, not an exception.
+#
+# This job is the one workflow that deliberately does NOT pin. Everything else
+# pins sympy via the floor in mathbeast/__init__.py; this one installs the
+# newest release and runs the same suite against it.
+
+on:
+  schedule:
+    # Mondays, early enough to be noticed during the week.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install against the newest SymPy on PyPI
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade --pre sympy
+          python -c "import sympy; print('canary sympy', sympy.__version__)"
+
+      - run: pip install -e ".[dev]"
+
+      - name: Fail if the floor itself has been overtaken
+        # mathbeast/__init__.py raises if the installed SymPy is below the
+        # floor. A canary that ran anyway would not be testing what ships.
+        run: python -c "import mathbeast; print('floor ok')"
+
+      - name: Run the full suite
+        run: pytest -q
+
+      - name: Report the pack size and unsupported-claim floor
+        run: |
+          python -m mathbeast.cli coverage | head -1
+          python -m mathbeast.cli bench --per-skill 3

@@ -26,7 +26,7 @@ from typing import Any, Callable
 import sympy
 import yaml
 
-from mathbeast.forms import AnswerForm
+from mathbeast.forms import AnswerForm, sig_figs_round
 from mathbeast.verify import ParseRejected, normalise, to_expr
 
 # --- audited transform vocabulary -------------------------------------------
@@ -213,6 +213,11 @@ class Problem:
     steps: tuple[Step, ...]
     seed: int
     meta: dict[str, Any] = field(default_factory=dict)
+    #: What to *show* a student. Usually `answer`, but for a `rounded` question
+    #: the exact value is 21.9317122 while the question asked for 3 s.f., and
+    #: displaying the exact value is both ugly and slightly wrong as a model
+    #: answer. The checker still uses the exact `answer`.
+    answer_display: str = ""
 
     def answer_text(self) -> str:
         value = self.answer
@@ -463,6 +468,11 @@ class Skill:
                 ),
             )
 
+        # `spec` may reference parameters, e.g. `spec: "{sf}sf"` for a rounding
+        # question. It has to be resolved per-problem, not read off the raw
+        # file.
+        spec = _substitute(self.spec, values) if self.spec else self.spec
+
         return Problem(
             skill_id=self.id,
             syllabus=self.syllabus,
@@ -470,21 +480,22 @@ class Skill:
             title=self.title,
             statement=statement,
             answer_form=self.answer_form,
-            # `spec` may reference parameters, e.g. `spec: "{sf}sf"` for a
-            # rounding question. It has to be resolved per-problem, not read
-            # off the raw file.
-            spec=_substitute(self.spec, values) if self.spec else self.spec,
+            spec=spec,
             answer=answer_text,
+            answer_display=_display_for(answer_text, self.answer_form, spec),
             steps=steps,
             seed=seed if seed is not None else -1,
             meta={k: sympy.sstr(v) for k, v in values.items()},
         )
 
-    def smoke(self, seeds: int = 200) -> None:
+    def smoke(self, seeds: int = 60) -> None:
         """Refuse to ship a skill that can produce a broken problem.
 
         The equivalent of a generator that cannot ship a bad problem: if any
         seed produces an unparseable or empty answer, the skill is rejected.
+        Sixty seeds covers the parameter space of these skills comfortably;
+        the default is a floor for contributors, not a substitute for the
+        pack tests, which check every skill again at a different seed range.
         """
         from mathbeast.verify import normalise
 
@@ -521,6 +532,20 @@ def _endpoint_is_open(interval, side: str) -> bool:
     if hasattr(interval, f"{side}_closed"):
         return not bool(getattr(interval, f"{side}_closed"))
     return False
+
+
+def _display_for(answer: str, form: AnswerForm, spec: str | None) -> str:
+    """The answer as a student should see it, not as the checker compares it."""
+    if form is not AnswerForm.ROUNDED or not spec:
+        return answer
+    digits, kind = re.match(r"^\s*(\d+)\s*(sf|dp)\s*$", spec, re.IGNORECASE).groups()
+    try:
+        value = sympy.sympify(normalise(answer))
+        if form is AnswerForm.ROUNDED and kind.lower() == "sf":
+            return f"{sig_figs_round(value, int(digits)):g}"
+        return f"{round(float(sympy.N(value)), int(digits)):g}"
+    except Exception:  # noqa: BLE001 - display only, never load-bearing
+        return answer
 
 
 def _format_answer(value: Any) -> str:
