@@ -1,0 +1,18 @@
+id: 0580.e4.7.similar_shapes
+syllabus: E4.7
+tier: extended
+title: Similar shapes, finding a missing side
+statement: "Two shapes are similar. Corresponding sides are {a} cm and {c} cm. Find the side corresponding to {b} cm."
+answer: "{b}*{c}/{a}"
+answer_form: rounded
+spec: "3sf"
+transform: numeric
+rationale: "E4.7: corresponding sides are in the same ratio."
+params:
+  a: { dist: choice, options: [2, 3, 4, 5, 6, 8] }
+  scale: { dist: choice, options: [1.5, 2, 2.5, 3, 4] }
+  c: { dist: derive, template: "{a}*{scale}" }
+  b: { dist: choice, options: [5, 6, 7, 9, 10, 12] }
+steps:
+  - "Scale factor from the known pair: {c}/{a}."
+  - "Multiply {b} by that same factor."

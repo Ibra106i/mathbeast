@@ -1,0 +1,15 @@
+id: 0580.c4.4.area_triangle
+syllabus: C4.4
+tier: core
+title: Area of a triangle
+statement: "A triangle has a base of {b} cm and a perpendicular height of {h} cm. Find its area in cm²."
+answer: "{b}*{h}/2"
+answer_form: exact
+transform: exact
+rationale: "C4.4: half of base times height."
+params:
+  b: { dist: int, range: [4, 30] }
+  h: { dist: int, range: [4, 30] }
+steps:
+  - "Multiply the base by the height, then halve."
+  - "{b} × {h} ÷ 2 = {b}*{h}/2."

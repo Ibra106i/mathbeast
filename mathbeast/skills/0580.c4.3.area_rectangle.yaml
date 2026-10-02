@@ -1,0 +1,15 @@
+id: 0580.c4.3.area_rectangle
+syllabus: C4.3
+tier: core
+title: Area of a rectangle
+statement: "A rectangle is {w} cm by {h} cm. Find its area in cm²."
+answer: "{w}*{h}"
+answer_form: exact
+transform: exact
+rationale: "C4.3: area of a rectangle is length times width."
+params:
+  w: { dist: int, range: [3, 30] }
+  h: { dist: int, range: [3, 30] }
+steps:
+  - "Multiply the two sides."
+  - "{w} × {h} = {w}*{h}."

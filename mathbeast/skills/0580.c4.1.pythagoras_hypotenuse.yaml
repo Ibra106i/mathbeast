@@ -1,0 +1,16 @@
+id: 0580.c4.1.pythagoras_hypotenuse
+syllabus: C4.1
+tier: core
+title: Pythagoras, finding the hypotenuse
+statement: "A right-angled triangle has sides {a} and {b}. Find the length of the hypotenuse, giving your answer to 3 significant figures."
+answer: "sqrt({a}**2 + {b}**2)"
+answer_form: rounded
+spec: "3sf"
+transform: numeric
+rationale: "C4.1: the hypotenuse is the square root of the sum of the squares."
+params:
+  a: { dist: choice, options: [3, 5, 6, 8, 9, 12, 15, 20] }
+  b: { dist: choice, options: [4, 7, 8, 11, 16, 24] }
+steps:
+  - "Square each of the two shorter sides and add."
+  - "Take the square root of {a}**2 + {b}**2."

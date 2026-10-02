@@ -1,0 +1,16 @@
+id: 0580.c4.5.volume_cuboid
+syllabus: C4.5
+tier: core
+title: Volume of a cuboid
+statement: "A cuboid measures {l} cm by {w} cm by {h} cm. Find its volume in cm³."
+answer: "{l}*{w}*{h}"
+answer_form: exact
+transform: exact
+rationale: "C4.5: volume is length times width times height."
+params:
+  l: { dist: int, range: [2, 20] }
+  w: { dist: int, range: [2, 15] }
+  h: { dist: int, range: [2, 12] }
+steps:
+  - "Find the area of the base first: {l} × {w}."
+  - "Then multiply by the height: {l} × {w} × {h}."

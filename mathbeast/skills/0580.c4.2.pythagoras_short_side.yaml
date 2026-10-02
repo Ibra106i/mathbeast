@@ -1,0 +1,17 @@
+id: 0580.c4.2.pythagoras_short_side
+syllabus: C4.2
+tier: core
+title: Pythagoras, finding a shorter side
+statement: "A right-angled triangle has a hypotenuse of {c} cm and one side of {a} cm. Find the other side, giving your answer to 3 significant figures."
+answer: "sqrt({c}**2 - {a}**2)"
+answer_form: rounded
+spec: "3sf"
+transform: numeric
+rationale: "C4.2: subtract, then take the square root. Sides come from scaled 3-4-5 triples so the radicand is always positive; wider triple coverage needs a way to destructure a list parameter."
+params:
+  k: { dist: choice, options: [1, 2, 3, 4, 5, 6] }
+  a: { dist: derive, template: "3*{k}" }
+  c: { dist: derive, template: "5*{k}" }
+steps:
+  - "Square the hypotenuse and subtract the square of the known side."
+  - "Take the square root to find the missing side."

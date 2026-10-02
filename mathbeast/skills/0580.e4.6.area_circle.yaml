@@ -1,0 +1,15 @@
+id: 0580.e4.6.area_circle
+syllabus: E4.6
+tier: extended
+title: Area of a circle
+statement: "A circle has radius {r} cm. Find its area in cm², using π = 3.142 and giving your answer to 3 significant figures."
+answer: "3.142*{r}**2"
+answer_form: rounded
+spec: "3sf"
+transform: numeric
+rationale: "E4.6: area is πr². 0580 permits π = 3.142 or the calculator value; this pack uses 3.142 so the answer is reproducible without one."
+params:
+  r: { dist: int, range: [2, 20] }
+steps:
+  - "Square the radius, then multiply by 3.142."
+  - "So the area is 3.142 × {r}²."
