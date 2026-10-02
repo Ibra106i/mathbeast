@@ -54,6 +54,12 @@ _NOT_CLAIMS = frozenset(
     {"a", "i", "so", "to", "of", "by", "the", "and", "or", "is", "it", "in", "on", "if"}
 )
 
+# A leading alphabetic word of three or more letters is prose, not a variable:
+# "Replace every x with -4" matches the run "with -4", and reporting that as an
+# unsupported claim would be exactly the false accusation this module exists to
+# avoid. IGCSE uses single-letter variables, so nothing real is lost.
+_LEADING_WORD = re.compile(r"^[A-Za-z]{3,}\s+")
+
 
 @dataclass(frozen=True)
 class Claim:
@@ -105,6 +111,12 @@ def extract_claims(text: str) -> list[str]:
     claims: list[str] = []
     for run in _MATHS_RUN.finditer(text):
         candidate = run.group(0).strip()
+        # Strip prose prefixes, repeatedly: "with -4" -> "-4".
+        while True:
+            trimmed = _LEADING_WORD.sub("", candidate).strip()
+            if trimmed == candidate:
+                break
+            candidate = trimmed
         if not candidate or candidate.lower() in _NOT_CLAIMS:
             continue
         if not (_HAS_DIGIT.search(candidate) or _HAS_OPERATOR.search(candidate)):

@@ -40,6 +40,16 @@ def test_ordinary_words_never_become_symbols() -> None:
         assert extract_claims(word) == []
 
 
+def test_a_prose_prefix_is_stripped_from_a_claim() -> None:
+    """"Replace every x with -4" must yield "-4", never "with -4".
+
+    Reporting the English word as an unsupported claim is the false accusation
+    that would make this module useless as a measurement.
+    """
+    assert extract_claims("Replace every x with -4.") == ["-4"]
+    assert "with" not in " ".join(extract_claims("Substitute -6 for the value."))
+
+
 # --- binding ----------------------------------------------------------------
 
 

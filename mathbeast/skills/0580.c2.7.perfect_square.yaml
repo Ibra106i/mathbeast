@@ -1,0 +1,16 @@
+id: 0580.c2.7.perfect_square
+syllabus: C2.7
+tier: core
+title: Expanding a perfect square
+statement: "Expand {expr}."
+answer: "({v} + {n})**2"
+answer_form: exact
+transform: expand
+rationale: "C2.7: (a + b)² = a² + 2ab + b². The middle term is doubled."
+params:
+  v: { dist: const, value: x }
+  n: { dist: int, range: [1, 12] }
+  twice: { dist: derive, template: "2*{n}" }
+steps:
+  - "Square the first term, then double the product, then square the second."
+  - "The middle term is 2 * {n} = {twice}."

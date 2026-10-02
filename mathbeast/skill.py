@@ -311,11 +311,19 @@ class Skill:
         # answer can drift apart silently -- author writes (x+3)(x+5) in one
         # place and (x+4)(x+6) in the other, and every problem ships wrong.
         #
-        # `display` overrides how the question is *written*. It matters because
-        # `13^2` is Python's bitwise xor, not a square: parsing a display string
-        # as maths would silently produce 15. `13 squared` in prose has no such
-        # trap.
-        values["expr"] = _render(str(self.raw.get("display", self.raw["answer"])), values)
+        # `display` overrides how the question is *written*. It matters for two
+        # reasons. `13^2` is Python's bitwise xor, not a square, so a display
+        # string must not be parsed as maths. And canonicalising destroys the
+        # question: SymPy renders `15*x + 8*x` as `23*x`, which is the answer,
+        # so a skill asking "simplify 15x + 8x" would otherwise state its own
+        # answer.
+        #
+        # So `display` substitutes parameters and stops -- it is literal text.
+        # `{expr}`, absent an explicit display, is the canonicalised expression.
+        if "display" in self.raw:
+            values["expr"] = _substitute(str(self.raw["display"]), values)
+        else:
+            values["expr"] = _render(str(self.raw["answer"]), values)
         statement = _render(self.raw["statement"], values)
 
         answer_value = TRANSFORMS[self.transform](answer_expr)
@@ -409,11 +417,17 @@ def _format_answer(value: Any) -> str:
 
 
 def load(path: Path) -> Skill:
-    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    path = Path(path)
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        # Name the file. A bare ScannerError during collection points at the
+        # test module rather than the skill, which sends you looking in the
+        # wrong place entirely.
+        raise SkillError(f"{path.name}: invalid YAML -- {exc}") from None
     if not isinstance(data, dict):
         raise SkillError(f"{path}: skill files must be a YAML mapping")
-    skill = Skill(data, source=Path(path))
-    return skill
+    return Skill(data, source=path)
 
 
 def load_all(directory: Path, *, smoke: bool = True) -> list[Skill]:

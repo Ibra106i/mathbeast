@@ -1,0 +1,15 @@
+id: 0580.c2.8.algebraic_fraction
+syllabus: C2.8
+tier: core
+title: Simplifying an algebraic fraction
+statement: "Simplify {expr}."
+answer: "({v}**2 - {n}**2)/({v} - {n})"
+answer_form: exact
+transform: simplify
+rationale: "C2.8: factor the numerator and cancel the common factor."
+params:
+  v: { dist: const, value: x }
+  n: { dist: int, range: [2, 12] }
+steps:
+  - "Factor the numerator as a difference of two squares."
+  - "Cancel the factor ({v} - {n}) against the denominator."

@@ -1,0 +1,15 @@
+id: 0580.c2.6.difference_of_squares
+syllabus: C2.6
+tier: core
+title: Factorising the difference of two squares
+statement: "Factorise {expr}."
+answer: "{v}**2 - {n}**2"
+answer_form: exact
+transform: factor
+rationale: "C2.6: a² - b² = (a - b)(a + b)."
+params:
+  v: { dist: const, value: x }
+  n: { dist: int, range: [2, 15] }
+steps:
+  - "The two terms are {n} squared each."
+  - "Factor as ({v} - {n})({v} + {n})."
