@@ -292,7 +292,6 @@ class ParamResolver:
         if isinstance(rule, dict) and "from" in rule:
             deps.add(str(rule["from"]))
         return deps
-
     def _apply(self, rule: dict[str, Any]) -> Any:
         dist = rule.get("dist")
         if dist == "const":
@@ -312,6 +311,22 @@ class ParamResolver:
                 return sympy.sympify(filled)
             except (sympy.SympifyError, SyntaxError, TypeError) as exc:
                 raise SkillError(f"could not derive {rule!r}: {exc}") from None
+        if dist == "index":
+            # Pull one element out of a list-valued parameter. This is what
+            # lets a skill choose a whole Pythagorean triple as a unit and keep
+            # the three sides consistent, instead of drawing them separately
+            # and hoping.
+            source = self.values[rule["from"]]
+            if not isinstance(source, (list, tuple)):
+                raise SkillError(
+                    f"index expects a list, but {rule['from']} is {source!r}"
+                )
+            position = int(rule["at"])
+            if not -len(source) <= position < len(source):
+                raise SkillError(
+                    f"index {position} out of range for {rule['from']} = {source!r}"
+                )
+            return source[position]
         if dist == "sign":
             # Renders a number as "+ 11" or "- 11" for display only. Without
             # it a negative constant reaches a student as "8x + -11".

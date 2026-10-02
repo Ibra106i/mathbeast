@@ -41,6 +41,21 @@ def test_a_skill_can_be_named_by_slug(capsys) -> None:
     assert rows and all("pythagoras" in row["id"] for row in rows)
 
 
+def test_a_slug_prefix_beats_a_mid_string_match(capsys) -> None:
+    """`sin` must not drag in `probability_single`.
+
+    A plain substring search returned both, and the command then picked one at
+    random -- usually the wrong one.
+    """
+    rows = json.loads(run(capsys, "skills", "sin", "--json"))
+    assert [row["id"] for row in rows] == ["0580.c6.1.sin_angle"]
+
+
+def test_an_exact_id_wins_outright(capsys) -> None:
+    rows = json.loads(run(capsys, "skills", "0580.c7.1.probability_single", "--json"))
+    assert len(rows) == 1
+
+
 def test_coverage_groups_by_section(capsys) -> None:
     out = run(capsys, "coverage")
     assert "0580 pack:" in out

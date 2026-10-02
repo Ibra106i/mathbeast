@@ -1,13 +1,13 @@
-id: 0580.c6.2.cos_angle
-syllabus: C6.2
+id: 0580.c6.3.tan_angle
+syllabus: C6.3
 tier: core
-title: Finding cosine of an angle
-statement: "In a right-angled triangle the side opposite the marked angle is {o}, the adjacent side is {a}, and the hypotenuse is {c}. Find cos of the marked angle to 3 significant figures."
-answer: "{a}/({c})"
+title: Finding tangent of an angle
+statement: "In a right-angled triangle the side opposite the marked angle is {o}, the adjacent side is {a}, and the hypotenuse is {c}. Find tan of the marked angle to 3 significant figures."
+answer: "{o}/({a})"
 answer_form: rounded
 spec: "3sf"
 transform: numeric
-rationale: "C6.2: cos = adjacent / hypotenuse."
+rationale: "C6.3: tan = opposite / adjacent. The hypotenuse is not needed."
 params:
   triple:
     dist: choice
@@ -28,5 +28,5 @@ params:
   a: { dist: index, from: triple, at: 1 }
   c: { dist: index, from: triple, at: 2 }
 steps:
-  - "cos is the adjacent side divided by the hypotenuse."
-  - "So cos = {a}/{c}."
+  - "tan is the opposite side divided by the adjacent side."
+  - "So tan = {o}/{a}."

@@ -151,6 +151,75 @@ def test_no_malformed_signs_in_rendered_text(skill) -> None:
             )
 
 
+#: Only `/` and `-` are precedence-sensitive on their right operand.
+#: `a * (b * c)` and `a + (b + c)` associate, so an unbracketed compound there
+#: is harmless. `a / (b * c)` and `a - (b * c)` are not.
+_PRECEDENCE_OPS = ("/", "-")
+
+#: A `derive` template that is pure arithmetic over its inputs cannot produce a
+#: compound expression, so using it as a divisor is safe. One containing a root,
+#: a power or a symbol can.
+_COMPOUND_MARKERS = ("sqrt", "**", "x", "y")
+
+
+def _compound_params(skill) -> set[str]:
+    names = set()
+    for name, rule in skill.params.items():
+        if isinstance(rule, dict) and rule.get("dist") == "derive":
+            template = str(rule.get("template", ""))
+            if any(marker in template for marker in _COMPOUND_MARKERS):
+                names.add(name)
+        if isinstance(rule, dict) and rule.get("dist") == "index":
+            names.add(name)
+    return names
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=lambda s: s.id)
+def test_compound_divisors_are_bracketed(skill) -> None:
+    """Self-verification cannot catch this: the engine and the checker make the
+    same parse, so `10/2*sqrt(34)` verifies against itself perfectly and lands
+    in a student's hands as a sine of 29.2. It has to be caught structurally."""
+    import re
+
+    compound = _compound_params(skill)
+    if not compound:
+        return
+
+    for key in ("answer", "display"):
+        template = str(skill.raw.get(key, ""))
+        for name in compound:
+            for operator in _PRECEDENCE_OPS:
+                unbracketed = re.search(
+                    re.escape(operator) + re.escape(name), template.replace(" ", "")
+                )
+                bracketed = f"({operator}{{{name}}}" in template
+                assert not (unbracketed and not bracketed), (
+                    f"{skill.id}: {key!r} uses {operator}{{{name}}} unbracketed, and "
+                    f"{name!r} can be a compound expression. Write "
+                    f"({operator}{{{name}}}). Template: {template!r}"
+                )
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=lambda s: s.id)
+def test_ratios_are_mathematically_possible(skill) -> None:
+    """A sine of 29.2 is not a wrong answer, it is an impossible one.
+
+    Checked numerically at the source, because gate 3 verifies the answer
+    against itself and would happily bless it.
+    """
+    import sympy
+
+    for seed in range(SEEDS):
+        problem = skill.generate(seed)
+        if problem.answer_form.value != "rounded":
+            continue
+        value = float(sympy.sympify(problem.answer))
+        if "sin" in skill.id or "cos" in skill.id:
+            assert -1.0001 <= value <= 1.0001, (
+                f"{skill.id} seed {seed}: produced {value}, outside [-1, 1]"
+            )
+
+
 def test_coverage_is_reported() -> None:
     report = coverage_report(ALL_SKILLS)
     assert sum(report.values()) == len(ALL_SKILLS)

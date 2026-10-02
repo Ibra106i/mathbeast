@@ -39,17 +39,32 @@ def _load() -> list[Skill]:
     return load_all(SKILL_DIR, smoke=False)
 
 
+def _slug(skill: Skill) -> str:
+    """The part of the id after the syllabus code: `0580.c6.1.sin_angle` -> `sin_angle`."""
+    return skill.id.split(".")[-1].lower()
+
+
 def _select(skills: list[Skill], wanted: str | None, tier: str | None) -> list[Skill]:
     chosen = skills
     if wanted:
         exact = [s for s in skills if s.id == wanted]
         if exact:
             return exact
-        # Allow a prefix or slug match, so `drill pythagoras` works.
-        loose = [s for s in skills if wanted.lower() in s.id.lower()]
-        if not loose:
-            raise SystemExit(f"no skill matches {wanted!r}. Try `mathbeast skills`.")
-        return loose
+
+        query = wanted.lower()
+        # Match the slug before falling back to a substring, ranked in that
+        # order. A plain substring search made `explain sin` match
+        # `probability_single` as well, so the command silently picked one of
+        # two and usually got the wrong one.
+        prefix = [s for s in skills if _slug(s).startswith(query)]
+        if prefix:
+            return prefix
+
+        loose = [s for s in skills if query in s.id.lower() or query in s.title.lower()]
+        if loose:
+            return loose
+        raise SystemExit(f"no skill matches {wanted!r}. Try `mathbeast skills`.")
+
     if tier:
         chosen = [s for s in chosen if s.tier.value == tier]
     return chosen

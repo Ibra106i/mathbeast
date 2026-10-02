@@ -7,11 +7,25 @@ answer: "sqrt({c}**2 - {a}**2)"
 answer_form: rounded
 spec: "3sf"
 transform: numeric
-rationale: "C4.2: subtract, then take the square root. Sides come from scaled 3-4-5 triples so the radicand is always positive; wider triple coverage needs a way to destructure a list parameter."
+rationale: "C4.2: subtract, then take the square root. The triple is chosen as a unit so the sides are consistent and the radicand is always positive."
 params:
-  k: { dist: choice, options: [1, 2, 3, 4, 5, 6] }
-  a: { dist: derive, template: "3*{k}" }
-  c: { dist: derive, template: "5*{k}" }
+  triple:
+    dist: choice
+    options:
+      - [3, 4, 5]
+      - [4, 3, 5]
+      - [12, 5, 13]
+      - [5, 12, 13]
+      - [8, 15, 17]
+      - [15, 8, 17]
+      - [7, 24, 25]
+      - [24, 7, 25]
+      - [20, 21, 29]
+      - [21, 20, 29]
+      - [12, 16, 20]
+      - [16, 12, 20]
+  a: { dist: index, from: triple, at: 0 }
+  c: { dist: index, from: triple, at: 2 }
 steps:
   - "Square the hypotenuse and subtract the square of the known side."
   - "Take the square root to find the missing side."
