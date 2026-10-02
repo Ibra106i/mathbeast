@@ -78,12 +78,19 @@ Ask it something it cannot decide and it says so rather than guessing:
 
 ```python
 >>> from mathbeast.verify import verify
->>> verify("x", "some_unprovable_thing(x)", timeout=0.001)
-CheckResult(verdict=<Verdict.UNKNOWN: 'unknown'>, ..., reason='timed out after 0.001s')
+>>> verify("1/0", "0")
+CheckResult(verdict=<Verdict.UNKNOWN: 'unknown'>, expected='1/0', given='0',
+            reason='no proof of equality or difference found')
 ```
 
-An honest "I could not check that" is more useful than a confident wrong answer,
-and a badge that cannot distinguish the two is lying.
+`1/0` is undefined, so whether it equals zero is not a question the engine is
+entitled to answer. It also refuses to guess the other way. A confident wrong
+answer, and a confident *right* answer to an unanswerable question, are the same
+failure — and a badge that cannot tell them apart is lying.
+
+The parser is equally blunt about the near-misses. `g(a)` is rejected as an
+undefined function rather than quietly read as `a*g`, and `x <= 3` is refused as
+an expression because `x <= 3` and `x >= 3` share a boundary.
 
 ## Why the guarantee is narrower than the tagline
 
