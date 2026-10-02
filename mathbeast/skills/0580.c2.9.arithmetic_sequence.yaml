@@ -1,0 +1,21 @@
+id: 0580.c2.9.arithmetic_sequence
+syllabus: C2.9
+tier: core
+title: Continuing an arithmetic sequence
+statement: "Find the next number in {expr}."
+display: "{a}, {t2}, {t3}, {t4}, {t5}"
+answer: "{nxt}"
+answer_form: exact
+transform: exact
+rationale: "C2.9: continue a given number sequence."
+params:
+  a: { dist: int, range: [1, 20] }
+  d: { dist: int, range: [2, 12] }
+  t2: { dist: derive, template: "{a} + {d}" }
+  t3: { dist: derive, template: "{a} + 2*{d}" }
+  t4: { dist: derive, template: "{a} + 3*{d}" }
+  t5: { dist: derive, template: "{a} + 4*{d}" }
+  nxt: { dist: derive, template: "{a} + 5*{d}" }
+steps:
+  - "Each term goes up by {d}."
+  - "So the next term is {t5} + {d}."

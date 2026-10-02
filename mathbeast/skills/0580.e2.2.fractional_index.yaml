@@ -1,0 +1,18 @@
+id: 0580.e2.2.fractional_index
+syllabus: E2.2
+tier: extended
+title: Evaluating a fractional index
+statement: "Evaluate {base} raised to the power of {p}/{q}."
+display: "{base}^({p}/{q})"
+answer: "{base}**({p}/{q})"
+answer_form: exact
+transform: numeric
+rationale: "E2.2: fractional indices mean roots, so 8^(2/3) is the cube root of 64."
+params:
+  root: { dist: choice, options: [2, 3, 4, 5] }
+  p: { dist: const, value: 1 }
+  q: { dist: derive, template: "{root}" }
+  base: { dist: choice, options: [4, 8, 9, 16, 25, 27, 32, 36, 64, 125] }
+steps:
+  - "A power of 1/{q} means the {q}th root."
+  - "Work out the {q}th power of the answer, then the {p}th power of that."

@@ -212,6 +212,24 @@ def check_interval(expected: str, given: str, spec: str | None = None) -> CheckR
     return CheckResult(Verdict.PROVEN_DIFFERENT, expected, given, f"{got} is not {want}")
 
 
+_INFINITY_ENDPOINTS = {
+    "oo": sympy.oo,
+    "inf": sympy.oo,
+    "+oo": sympy.oo,
+    "+inf": sympy.oo,
+    "-oo": -sympy.oo,
+    "-inf": -sympy.oo,
+}
+
+
+def _endpoint(text: str):
+    """An interval endpoint, allowing the infinity keywords."""
+    stripped = text.strip().lower()
+    if stripped in _INFINITY_ENDPOINTS:
+        return _INFINITY_ENDPOINTS[stripped]
+    return to_expr(text)
+
+
 def _to_interval(text: str, variable: str):
     cleaned = normalise(text)
     var = sympy.Symbol(variable)
@@ -219,8 +237,8 @@ def _to_interval(text: str, variable: str):
     bracket = re.match(r"^([\[\(])([^,]+),([^,]+)([\]\)])$", cleaned)
     if bracket:
         return sympy.Interval(
-            to_expr(bracket.group(2)),
-            to_expr(bracket.group(3)),
+            _endpoint(bracket.group(2)),
+            _endpoint(bracket.group(3)),
             bracket.group(1) == "(",
             bracket.group(4) == ")",
         )
@@ -235,8 +253,17 @@ def _to_interval(text: str, variable: str):
             raise ParseRejected(f"{text!r} is not a single interval")
         closed = op_left in ("<=", ">=")
         return sympy.Interval(
-            to_expr(left), to_expr(right), not closed, not closed
+            _endpoint(left), _endpoint(right), not closed, not closed
         )
+
+    # One-sided forms: `x <= 6`, `6 >= x`, `x > 2`.
+    if len(tokens) == 3 and tokens[1] in ("<", "<=", ">", ">="):
+        left, op, right = tokens
+        variable_is_left = to_expr(left).free_symbols == {var}
+        value = _endpoint(right if variable_is_left else left)
+        if op in ("<", "<="):
+            return sympy.Interval(-sympy.oo, value, True, op == "<=")
+        return sympy.Interval(value, sympy.oo, op == ">=", True)
 
     raise ParseRejected(f"{text!r} is not an interval")
 

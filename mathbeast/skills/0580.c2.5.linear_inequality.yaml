@@ -1,0 +1,21 @@
+id: 0580.c2.5.linear_inequality
+syllabus: C2.5
+tier: core
+title: Solving a linear inequality
+statement: "Solve {expr}, giving the solution set as an interval."
+display: "{a}{v} {bs} <= {c}"
+answer: "{a}*{v} + {b} - {c}"
+answer_form: interval
+transform: solve_ineq
+rationale: "C2.5: an inequality reverses direction when divided by a negative."
+params:
+  v: { dist: const, value: x }
+  bound: { dist: int, range: [-6, 14] }
+  a: { dist: int, range: [2, 9] }
+  b: { dist: int, range: [-12, 12] }
+  bs: { dist: sign, from: b, plus: "+ {}", minus: "- {}" }
+  c: { dist: derive, template: "{a}*{bound} + {b}" }
+steps:
+  - "Move the constant to one side: {a}{v} <= {c} - {b}."
+  - "{a} is positive, so the inequality keeps its direction when dividing."
+  - "So {v} is at most {bound}, inclusive because the sign is <=."

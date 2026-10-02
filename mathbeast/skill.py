@@ -66,6 +66,25 @@ def _t_numeric(expr, digits: int = 12):
     return sympy.N(expr, digits)
 
 
+def _t_solve_ineq(expr):
+    """Solve `expr <= 0` over the reals. Pairs with AnswerForm.INTERVAL.
+
+    Uses `solve_univariate_inequality` with an explicit `Le`, rather than
+    `solve_inequalities`: the latter is not exported at the top level of SymPy
+    1.14 and its import path has moved before. This returns an Interval such as
+    (-oo, 6], which `_format_answer` renders as `[-inf, 6]` and `_to_interval`
+    reads back.
+    """
+    return sympy.solve_univariate_inequality(
+        sympy.Le(expr, 0), sympy.Symbol("x"), relational=False
+    )
+
+
+def _t_powsimp(expr):
+    """Combine like powers: 2**3 * 2**4 -> 2**7. E2.1 index laws."""
+    return sympy.powsimp(expr, force=True)
+
+
 def _t_diff(expr):
     return sympy.diff(expr, sympy.Symbol("x"))
 
@@ -103,6 +122,8 @@ TRANSFORMS: dict[str, Callable[[Any], Any]] = {
     "simplify": _t_simplify,
     "solve": _t_solve,
     "roots": _t_roots,
+    "solve_ineq": _t_solve_ineq,
+    "powsimp": _t_powsimp,
     "exact": _t_eval,
     "numeric": _t_numeric,
     "diff": _t_diff,
@@ -200,7 +221,7 @@ class ParamResolver:
                     self.values[name] = rule
                     progressed = True
                     continue
-                if _deps(str(rule)) <= self.values.keys():
+                if self._deps_of(rule) <= self.values.keys():
                     self.values[name] = self._apply(rule)
                     pending.pop(name)
                     progressed = True
@@ -209,9 +230,23 @@ class ParamResolver:
             if not progressed:
                 raise SkillError(
                     f"parameter dependency cycle or missing value: "
-                    f"{sorted(pending)} depend on {sorted(set().union(*(_deps(str(r)) for r in pending.values())) - self.values.keys())}"
+                    f"{sorted(pending)} depend on "
+                    f"{sorted(set().union(*(self._deps_of(r) for r in pending.values())) - self.values.keys())}"
                 )
         raise SkillError("could not resolve parameters")
+
+    @staticmethod
+    def _deps_of(rule: Any) -> set[str]:
+        """Parameters a rule depends on, including non-template references.
+
+        A `sign` rule that reads `from: b` depends on `b`, but the name appears
+        as a plain value rather than inside braces, so template scanning alone
+        would let it resolve too early and disagree with `b`.
+        """
+        deps = _deps(str(rule))
+        if isinstance(rule, dict) and "from" in rule:
+            deps.add(str(rule["from"]))
+        return deps
 
     def _apply(self, rule: dict[str, Any]) -> Any:
         dist = rule.get("dist")
@@ -232,6 +267,16 @@ class ParamResolver:
                 return sympy.sympify(filled)
             except (sympy.SympifyError, SyntaxError, TypeError) as exc:
                 raise SkillError(f"could not derive {rule!r}: {exc}") from None
+        if dist == "sign":
+            # Renders a number as "+ 11" or "- 11" for display only. Without
+            # it a negative constant reaches a student as "8x + -11".
+            # `from` reads an already-bound parameter; `of` draws a fresh one.
+            if "from" in rule:
+                inner = self.values[rule["from"]]
+            else:
+                inner = self._apply(rule["of"])
+            template = rule["minus"] if inner < 0 else rule.get("plus", "+ {}")
+            return template.format(abs(inner))
         raise SkillError(f"unknown distribution {dist!r}")
 
 
@@ -394,12 +439,39 @@ class Skill:
                 raise SkillError(f"{self.id}: seed {seed} produced no steps")
 
 
+_INFINITY_TEXT = {sympy.oo: "inf", -sympy.oo: "-inf"}
+
+
+def _endpoint_is_open(interval, side: str) -> bool:
+    """Whether an interval's `left`/`right` endpoint is open.
+
+    SymPy renamed these attributes across versions (`left_closed` ->
+    `left_open`), and it silently forces the endpoint at infinity to be open
+    regardless of what you pass -- which is correct, since `[-oo, 6]` and
+    `(-oo, 6]` are the same set. Read whichever attribute this version has.
+    """
+    if hasattr(interval, f"{side}_open"):
+        return bool(getattr(interval, f"{side}_open"))
+    if hasattr(interval, f"{side}_closed"):
+        return not bool(getattr(interval, f"{side}_closed"))
+    return False
+
+
 def _format_answer(value: Any) -> str:
     """Render an answer as text a student would type."""
     if isinstance(value, (list, tuple, set)):
         return ", ".join(_format_answer(v) for v in value)
     if isinstance(value, float):
         return f"{value:.10g}"
+    # Intervals are rendered in the same notation a student is taught, so that
+    # `Interval(-oo, 6]` prints as `[-inf, 6]` and round-trips through the
+    # interval answer form.
+    if isinstance(value, sympy.Interval):
+        left = "(" if _endpoint_is_open(value, "left") else "["
+        right = ")" if _endpoint_is_open(value, "right") else "]"
+        lo = _INFINITY_TEXT.get(value.start, _format_answer(value.start))
+        hi = _INFINITY_TEXT.get(value.end, _format_answer(value.end))
+        return f"{left}{lo}, {hi}{right}"
     if isinstance(value, sympy.Basic):
         if value.is_Float:
             return f"{float(value):.10g}"

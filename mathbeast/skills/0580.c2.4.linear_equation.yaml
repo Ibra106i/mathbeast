@@ -1,0 +1,20 @@
+id: 0580.c2.4.linear_equation
+syllabus: C2.4
+tier: core
+title: Solving a linear equation
+statement: "Solve {a}{v} + {b} = {c} for {v}."
+display: "{a}{v} + {b} = {c}"
+answer: "{a}*{v} + {b} - {c}"
+answer_form: set
+transform: solve
+rationale: "C2.4: rearrange to make the subject the unknown."
+params:
+  v: { dist: const, value: x }
+  xval: { dist: int, range: [-12, 15] }
+  a: { dist: int, range: [2, 9] }
+  b: { dist: int, range: [-15, 15] }
+  c: { dist: derive, template: "{a}*{xval} + {b}" }
+steps:
+  - "Move the constant to one side: {a}{v} = {c} - {b}."
+  - "Divide both sides by {a}."
+  - "So {v} = {xval}."
