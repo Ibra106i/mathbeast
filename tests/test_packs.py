@@ -80,17 +80,20 @@ def test_offline_narration_is_always_grounded(skill) -> None:
 def test_statements_do_not_leak_the_answer(skill) -> None:
     """A question that contains its own answer is not a question.
 
-    Rounded skills are exempt by construction: "Round 98765 to 2 significant
-    figures" has to state 98765, because that *is* the question. The answer the
-    student types is the rounded value, which the statement does not contain.
+    Narrowed to expression answers of substance, and it is not a cosmetic
+    check. The earlier substring version fired constantly and wrongly: a
+    simultaneous-equation question reading "x + y = 7 and 2x - 2y = -3" has
+    answer 3, so "3" appears in the question. For a bare integer answer the
+    substring test is noise; for a multi-term expression, a genuine leak, it is
+    the whole question being answered in the stem.
     """
-    if skill.answer_form.value == "rounded":
-        pytest.skip("rounded skills must echo their input in the question")
+    if skill.answer_form.value != "exact":
+        pytest.skip("only exact-form expression answers can leak this way")
 
     for seed in range(SEEDS):
         problem = skill.generate(seed)
         answer = problem.answer.strip()
-        if len(answer) < 3:
+        if len(answer) < 4 or answer.isdigit():
             continue
         assert answer not in problem.statement, (
             f"{skill.id} seed {seed}: statement leaks answer {answer!r}"

@@ -20,6 +20,13 @@ def problem():
     return load(SKILL).generate(1)  # Expand (x + 3)(x + 10) -> x**2 + 13*x + 30
 
 
+def problem_of():
+    return load(SKILL).generate(1)
+
+
+
+
+
 # --- claim extraction --------------------------------------------------------
 
 
@@ -127,6 +134,41 @@ def test_numeric_atoms_of_the_answer_are_supported(problem) -> None:
     atoms = [str(a) for a in __import__("sympy").sympify(problem.answer).atoms(__import__("sympy").Number)]
     lines[0] = (0, "The numbers involved are " + ", ".join(atoms) + ".")
     assert check_narration(problem, lines).unsupported_rate == 0.0
+
+
+def test_an_unparseable_fragment_is_ignored_not_accused() -> None:
+    """Regression: a scraped fragment like `5)(x - 9)` was reported as an
+    unsupported claim. It cannot be evaluated, so it must not be counted in
+    either direction -- accusing a narrator of an unevaluable fragment is a
+    false accusation, which would void the benchmark metric."""
+    from mathbeast.prose import Claim, NarrationReport
+
+    report = NarrationReport(
+        bound=True,
+        claims=(
+            Claim(text="5)(x - 9)", supported=True, step_id=0, evaluable=False),
+            Claim(text="30", supported=True, step_id=0),
+        ),
+    )
+    assert report.unsupported == ()
+    assert len(report.evaluable) == 1
+    assert report.unsupported_rate == 0.0
+    assert "unevaluable fragment" in report.summary()
+
+
+def test_bracket_products_across_the_whole_pack_stay_grounded() -> None:
+    """The exact seed that surfaced the fragment regression."""
+    from pathlib import Path
+
+    from mathbeast.skill import load
+
+    skills = Path(__file__).parent.parent / "mathbeast" / "skills"
+    for name in ("0580.e2.3.quadratic_roots", "0580.e2.4.factorise_quadratic"):
+        skill = load(skills / f"{name}.yaml")
+        for seed in range(25):
+            problem = skill.generate(seed)
+            report = check_narration(problem, narrate_offline(problem))
+            assert report.ok, f"{name} seed {seed}: {report.summary()}"
 
 
 def test_unsupported_rate_is_a_proportion(problem) -> None:

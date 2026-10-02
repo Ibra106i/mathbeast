@@ -1,0 +1,18 @@
+id: 0580.e2.7.index_divide
+syllabus: E2.7
+tier: extended
+title: Dividing powers with the same base
+statement: "Write {expr} as a single power of {base}."
+display: "{base}^{p} / {base}^{q}"
+answer: "{base}**{p} / {base}**{q}"
+answer_form: exact
+transform: powsimp
+rationale: "E2.7: a^m / a^n = a^(m-n)."
+params:
+  base: { dist: choice, options: [2, 3, 5, 7] }
+  q: { dist: int, range: [1, 5] }
+  p: { dist: derive, template: "{q} + 2" }
+  diff: { dist: derive, template: "{p} - {q}" }
+steps:
+  - "Subtract the powers because the bases match: {p} - {q} = {diff}."
+  - "So the answer is {base} to the power {diff}."

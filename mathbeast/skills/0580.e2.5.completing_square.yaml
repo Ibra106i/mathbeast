@@ -1,0 +1,20 @@
+id: 0580.e2.5.completing_square
+syllabus: E2.5
+tier: extended
+title: Completing the square
+statement: "Write {expr} in completed square form."
+display: "{v}^2 {bs}*{v}"
+answer: "{v}**2 + {psum}*{v}"
+answer_form: exact
+transform: complete_square
+rationale: "E2.5: half the coefficient, squared, goes inside the bracket and is subtracted outside."
+params:
+  v: { dist: const, value: x }
+  b: { dist: int, range: [2, 19] }
+  psum: { dist: derive, template: "{b}" }
+  bs: { dist: sign, from: b, plus: "+ {}", minus: "- {}" }
+  half: { dist: derive, template: "{b}/2" }
+  halfsq: { dist: derive, template: "({b}/2)**2" }
+steps:
+  - "Half of {b} is {half}, and {half} squared is {halfsq}."
+  - "Put {halfsq} inside the bracket and take it away again outside."

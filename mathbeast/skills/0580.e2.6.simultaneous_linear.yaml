@@ -1,0 +1,22 @@
+id: 0580.e2.6.simultaneous_linear
+syllabus: E2.6
+tier: extended
+title: Simultaneous equations by elimination
+statement: "Solve the simultaneous equations for {v}: {expr}"
+display: "{v} + {y} = {s1}   and   {a}{v} - {b}{y} = {s2}"
+answer: "[{v} + {y} - {s1}, {a}*{v} - {b}*{y} - {s2}]"
+answer_form: set
+transform: solve_system_x
+rationale: "E2.6: eliminate one variable by adding or subtracting the equations."
+params:
+  v: { dist: const, value: x }
+  y: { dist: const, value: y }
+  xval: { dist: int, range: [-8, 12] }
+  yval: { dist: int, range: [-8, 12] }
+  a: { dist: int, range: [2, 9] }
+  b: { dist: int, range: [2, 9] }
+  s1: { dist: derive, template: "{xval} + {yval}" }
+  s2: { dist: derive, template: "{a}*{xval} - {b}*{yval}" }
+steps:
+  - "Multiply the first equation by {b} and the second by 1, then add to remove {y}."
+  - "Solve for {v}, then substitute back to find {y}."

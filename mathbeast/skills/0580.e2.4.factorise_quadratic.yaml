@@ -1,0 +1,21 @@
+id: 0580.e2.4.factorise_quadratic
+syllabus: E2.4
+tier: extended
+title: Factorising a quadratic
+statement: "Factorise {expr}."
+display: "{v}^2 {bs}*{v} {cs}"
+answer: "{v}**2 + {psum}*{v} + {prod}"
+answer_form: exact
+transform: factor
+rationale: "E2.4: the roots come from the factorisation, so this is the same work as solving."
+params:
+  v: { dist: const, value: x }
+  r1: { dist: int, range: [-9, 9] }
+  r2: { dist: int, range: [-9, 9] }
+  psum: { dist: derive, template: "-({r1} + {r2})" }
+  prod: { dist: derive, template: "{r1}*{r2}" }
+  bs: { dist: sign, from: psum, plus: "+ {}", minus: "- {}" }
+  cs: { dist: sign, from: prod, plus: "+ {}", minus: "- {}" }
+steps:
+  - "The numbers that multiply to {prod} and add to {-psum} are {r1} and {r2}."
+  - "So factorise as ({v} - {r1})({v} - {r2})."

@@ -1,0 +1,21 @@
+id: 0580.e2.3.quadratic_roots
+syllabus: E2.3
+tier: extended
+title: Solving a quadratic by factorising
+statement: "Solve {expr} = 0."
+display: "{v}^2 {bs}*{v} + {c}"
+answer: "{v}**2 + {psum}*{v} + {prod}"
+answer_form: set
+transform: solve
+rationale: "E2.3: quadratic factorises to two integer roots."
+params:
+  v: { dist: const, value: x }
+  r1: { dist: int, range: [-9, 9] }
+  r2: { dist: int, range: [-9, 9] }
+  psum: { dist: derive, template: "-({r1} + {r2})" }
+  prod: { dist: derive, template: "{r1}*{r2}" }
+  bs: { dist: sign, from: psum, plus: "+ {}", minus: "- {}" }
+  c: { dist: sign, from: prod, plus: "+ {}", minus: "- {}" }
+steps:
+  - "Factorise into ({v} - {r1})({v} - {r2}) = 0."
+  - "So either {v} = {r1} or {v} = {r2}."

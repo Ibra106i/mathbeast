@@ -85,6 +85,44 @@ def _t_powsimp(expr):
     return sympy.powsimp(expr, force=True)
 
 
+def _t_complete_square(expr):
+    """Rewrite `x**2 + b*x` as `(x + b/2)**2 - (b/2)**2`.
+
+    Returns a string rather than a SymPy object: SymPy has no printer for
+    "completed square" form, and expanding the result would undo the whole
+    point. The string is still parseable by the checker, so a student answer
+    verifies against it.
+    """
+    x = sympy.Symbol("x")
+    expanded = sympy.expand(expr)
+    linear = sympy.Poly(expanded, x).coeff_monomial(x)
+    if linear == 0:
+        return sympy.sstr(sympy.factor(expanded))
+    half = sympy.nsimplify(linear / 2)
+    completed = sympy.factor(expanded + half**2)
+    return f"{sympy.sstr(completed)} - {sympy.sstr(half**2)}"
+
+
+def _t_solve_system_x(value):
+    """Solve a two-equation linear system and return x alone.
+
+    `value` is a list of two equations, e.g. `answer: "[x + y - 5, x - y - 1]"`.
+    Solving for a single unknown rather than returning the ordered pair keeps
+    the answer order-free, which is what the `set` answer form can check.
+    """
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        raise SkillError("solve_system_x expects two equations, e.g. '[x + y - 5, x - y - 1]'")
+    x, y = sympy.symbols("x y")
+    solutions = sympy.solve(list(value), [x, y])
+    if isinstance(solutions, dict):
+        # SymPy returns a bare dict rather than a single-element list in some
+        # cases; normalise before indexing.
+        solutions = [solutions]
+    if not solutions or x not in solutions[0]:
+        raise SkillError("the simultaneous equations have no unique solution for x")
+    return solutions[0][x]
+
+
 def _t_diff(expr):
     return sympy.diff(expr, sympy.Symbol("x"))
 
@@ -122,6 +160,8 @@ TRANSFORMS: dict[str, Callable[[Any], Any]] = {
     "simplify": _t_simplify,
     "solve": _t_solve,
     "roots": _t_roots,
+    "solve_system_x": _t_solve_system_x,
+    "complete_square": _t_complete_square,
     "solve_ineq": _t_solve_ineq,
     "powsimp": _t_powsimp,
     "exact": _t_eval,
@@ -275,6 +315,15 @@ class ParamResolver:
                 inner = self.values[rule["from"]]
             else:
                 inner = self._apply(rule["of"])
+            try:
+                inner = sympy.sympify(inner)
+            except (sympy.SympifyError, TypeError, ValueError):
+                raise SkillError(f"sign needs a number, got {inner!r}") from None
+            if not inner.is_number:
+                raise SkillError(
+                    f"sign needs a number, got {inner!r}; it is for display "
+                    "constants such as 'x + 5', not for expressions"
+                )
             template = rule["minus"] if inner < 0 else rule.get("plus", "+ {}")
             return template.format(abs(inner))
         raise SkillError(f"unknown distribution {dist!r}")

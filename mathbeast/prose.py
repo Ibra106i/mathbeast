@@ -68,6 +68,12 @@ class Claim:
     text: str
     supported: bool
     step_id: int
+    #: False when the extracted text could not be parsed as an expression at
+    #: all -- a fragment like `5)(x - 9)` scraped out of a bracketed product.
+    #: Such a claim cannot be evaluated, so it is neither supported nor
+    #: unsupported. Counting it as unsupported would be a false accusation,
+    #: and for a benchmark a false accusation is worse than a miss.
+    evaluable: bool = True
 
 
 @dataclass
@@ -79,8 +85,12 @@ class NarrationReport:
     binding_errors: tuple[str, ...] = field(default_factory=tuple)
 
     @property
+    def evaluable(self) -> tuple[Claim, ...]:
+        return tuple(c for c in self.claims if c.evaluable)
+
+    @property
     def unsupported(self) -> tuple[Claim, ...]:
-        return tuple(c for c in self.claims if not c.supported)
+        return tuple(c for c in self.evaluable if not c.supported)
 
     @property
     def ok(self) -> bool:
@@ -88,16 +98,22 @@ class NarrationReport:
 
     @property
     def unsupported_rate(self) -> float:
-        """Fraction of claims that no verified step supports. 0.0 if no claims."""
-        if not self.claims:
+        """Fraction of evaluable claims that no verified step supports.
+
+        0.0 when there is nothing to measure.
+        """
+        evaluable = self.evaluable
+        if not evaluable:
             return 0.0
-        return len(self.unsupported) / len(self.claims)
+        return len(self.unsupported) / len(evaluable)
 
     def summary(self) -> str:
         if not self.bound:
             return f"unbound: {'; '.join(self.binding_errors)}"
         if not self.unsupported:
-            return f"grounded ({len(self.claims)} claims checked)"
+            skipped = len(self.claims) - len(self.evaluable)
+            note = f" ({skipped} unevaluable fragment(s) ignored)" if skipped else ""
+            return f"grounded ({len(self.evaluable)} claims checked{note})"
         flagged = ", ".join(f"{c.text!r} @step{c.step_id}" for c in self.unsupported[:5])
         return f"{len(self.unsupported)} unsupported claim(s): {flagged}"
 
@@ -141,7 +157,12 @@ def _expressions_in(expression: str) -> list:
 
     try:
         expr = to_expr(expression)
-    except (ParseRejected, SyntaxError, TypeError, AttributeError, KeyError):
+    except Exception:  # noqa: BLE001
+        # Same reasoning as the worker in verify.py: input here has already
+        # passed the allowlist, so nothing is untrusted -- it is merely text
+        # that may not be parseable maths. SymPy signals that through a wide
+        # and shifting exception surface (SyntaxError, TokenError, IndexError
+        # from its own parenthesising code, ...), so enumerate none of them.
         return []
 
     if not isinstance(expr, sympy.Basic):
@@ -156,13 +177,26 @@ def _expressions_in(expression: str) -> list:
     return list(pieces)
 
 
+def _is_evaluable(claim: str) -> bool:
+    """Whether a claim parses as an expression and can be compared at all."""
+    try:
+        to_expr(claim)
+    except Exception:  # noqa: BLE001
+        return False
+    return True
+
+
 def _claim_in(claim: str, trusted: list) -> bool:
     """Is this claim traceable to something the engine verified?"""
+    left = None
+    try:
+        left = to_expr(claim)
+    except Exception:  # noqa: BLE001
+        # Not parseable as maths, so it cannot be compared against anything.
+        # See `_expressions_in` for why no exception types are enumerated.
+        return False
+
     for target in trusted:
-        try:
-            left = to_expr(claim)
-        except (ParseRejected, SyntaxError, TypeError, AttributeError, KeyError):
-            continue
         try:
             if sympy.simplify(left - target) == 0:
                 return True
@@ -218,13 +252,18 @@ def check_narration(problem: Problem, lines: list[tuple[int, str]]) -> Narration
         step = by_id.get(step_id)
         trusted = _step_trust(step) if step else []
         for claim_text in extract_claims(text):
-            claims.append(
-                Claim(
-                    text=claim_text,
-                    supported=_claim_in(claim_text, trusted),
-                    step_id=step_id,
+            if _is_evaluable(claim_text):
+                claims.append(
+                    Claim(
+                        text=claim_text,
+                        supported=_claim_in(claim_text, trusted),
+                        step_id=step_id,
+                    )
                 )
-            )
+            else:
+                claims.append(
+                    Claim(text=claim_text, supported=True, step_id=step_id, evaluable=False)
+                )
 
     return NarrationReport(bound=not errors, claims=tuple(claims), binding_errors=tuple(errors))
 
