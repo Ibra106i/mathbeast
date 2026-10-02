@@ -128,6 +128,29 @@ def test_no_unresolved_placeholders(skill) -> None:
         assert not found, f"{skill.id} seed {seed}: unresolved {found} in {blob!r}"
 
 
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=lambda s: s.id)
+def test_no_malformed_signs_in_rendered_text(skill) -> None:
+    """`+ -13` means a `sign` parameter met a literal `+` that already carried
+    the sign. Nobody writes that.
+
+    Deliberately does *not* flag `- -`: subtracting a negative is legitimate
+    notation ("8 - (-6)" is just "-6 + 8"). Those steps read awkwardly, so they
+    parenthesise the negative instead -- but they are not wrong, and a gate
+    that cried wolf over correct maths would get ignored.
+
+    Nothing else catches this: the text is non-empty, the placeholders all
+    resolve, and the answer is still correct. It only shows up when a student
+    reads the question.
+    """
+    for seed in range(SEEDS):
+        problem = skill.generate(seed)
+        blob = " ".join([problem.statement, *(s.text for s in problem.steps)])
+        for bad in ("+ -", "+ +"):
+            assert bad not in blob, (
+                f"{skill.id} seed {seed}: {bad!r} in rendered text: {blob!r}"
+            )
+
+
 def test_coverage_is_reported() -> None:
     report = coverage_report(ALL_SKILLS)
     assert sum(report.values()) == len(ALL_SKILLS)

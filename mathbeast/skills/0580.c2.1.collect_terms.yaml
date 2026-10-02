@@ -3,7 +3,7 @@ syllabus: C2.1
 tier: core
 title: Collecting like terms
 statement: "Simplify {expr}."
-display: "{a}{v} + {b}{v} + {c}"
+display: "{a}{v} + {b}{v} {cs}"
 answer: "{a}*{v} + {b}*{v} + {c}"
 answer_form: exact
 transform: collect
@@ -14,6 +14,7 @@ params:
   b: { dist: int, range: [2, 15] }
   c: { dist: int, range: [-20, 20] }
   psum: { dist: derive, template: "{a} + {b}" }
+  cs: { dist: sign, from: c, plus: "+ {}", minus: "- {}" }
 steps:
   - "The {v} terms go together: {a} + {b} = {psum}."
   - "Keep the constant {c} as it is."

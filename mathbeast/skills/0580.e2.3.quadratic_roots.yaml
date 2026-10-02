@@ -3,7 +3,7 @@ syllabus: E2.3
 tier: extended
 title: Solving a quadratic by factorising
 statement: "Solve {expr} = 0."
-display: "{v}^2 {bs}*{v} + {c}"
+display: "{v}^2 {bs}*{v} {c}"
 answer: "{v}**2 + {psum}*{v} + {prod}"
 answer_form: set
 transform: solve
@@ -16,6 +16,10 @@ params:
   prod: { dist: derive, template: "{r1}*{r2}" }
   bs: { dist: sign, from: psum, plus: "+ {}", minus: "- {}" }
   c: { dist: sign, from: prod, plus: "+ {}", minus: "- {}" }
+  # Sign-aware brackets. Without these a negative root renders as
+  # "(x - -9)", which is both ugly and genuinely ambiguous to read.
+  f1: { dist: sign, from: r1, plus: "(x - {})", minus: "(x + {})" }
+  f2: { dist: sign, from: r2, plus: "(x - {})", minus: "(x + {})" }
 steps:
-  - "Factorise into ({v} - {r1})({v} - {r2}) = 0."
+  - "Factorise into {f1}{f2} = 0."
   - "So either {v} = {r1} or {v} = {r2}."

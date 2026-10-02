@@ -1,4 +1,4 @@
-id: 0580.c2.5.linear_inequality
+﻿id: 0580.c2.5.linear_inequality
 syllabus: C2.5
 tier: core
 title: Solving a linear inequality
@@ -14,8 +14,9 @@ params:
   a: { dist: int, range: [2, 9] }
   b: { dist: int, range: [-12, 12] }
   bs: { dist: sign, from: b, plus: "+ {}", minus: "- {}" }
+  bn: { dist: sign, from: b, plus: "{}", minus: "({})", signed: true }
   c: { dist: derive, template: "{a}*{bound} + {b}" }
 steps:
-  - "Move the constant to one side: {a}{v} <= {c} - {b}."
+  - "Move the constant to one side: {a}{v} <= {c} - {bn}."
   - "{a} is positive, so the inequality keeps its direction when dividing."
   - "So {v} is at most {bound}, inclusive because the sign is <=."

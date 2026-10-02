@@ -330,7 +330,12 @@ class ParamResolver:
                     "constants such as 'x + 5', not for expressions"
                 )
             template = rule["minus"] if inner < 0 else rule.get("plus", "+ {}")
-            return template.format(abs(inner))
+            # Default substitutes the magnitude, which is what "+ 11" / "- 11"
+            # wants. `signed: true` substitutes the signed value instead, for
+            # cases like parenthesising a negative: without it "(-6)" would
+            # render as "(6)".
+            payload = inner if rule.get("signed") else abs(inner)
+            return template.format(payload)
         raise SkillError(f"unknown distribution {dist!r}")
 
 

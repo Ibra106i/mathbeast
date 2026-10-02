@@ -1,4 +1,4 @@
-id: 0580.c5.1.gradient
+﻿id: 0580.c5.1.gradient
 syllabus: C5.1
 tier: core
 title: Gradient of a straight line
@@ -12,6 +12,11 @@ params:
   y1: { dist: int, range: [-10, 10] }
   x2: { dist: int, range: [7, 15] }
   y2: { dist: int, range: [-10, 10] }
+  # Parenthesised negatives, so the step reads "8 - (-6)" rather than
+  # "8 - -6". Subtracting a negative is correct notation, but only if the
+  # reader can see which term is being subtracted.
+  x1n: { dist: sign, from: x1, plus: "{}", minus: "({})", signed: true }
+  y1n: { dist: sign, from: y1, plus: "{}", minus: "({})", signed: true }
 steps:
-  - "Change in y is {y2} - {y1}; change in x is {x2} - {x1}."
-  - "Divide: the gradient is ({y2} - {y1})/({x2} - {x1})."
+  - "Change in y is {y2} - {y1n}; change in x is {x2} - {x1n}."
+  - "Divide one by the other."

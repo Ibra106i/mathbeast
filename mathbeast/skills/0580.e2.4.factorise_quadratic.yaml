@@ -14,8 +14,11 @@ params:
   r2: { dist: int, range: [-9, 9] }
   psum: { dist: derive, template: "-({r1} + {r2})" }
   prod: { dist: derive, template: "{r1}*{r2}" }
+  npsum: { dist: derive, template: "-{psum}" }
   bs: { dist: sign, from: psum, plus: "+ {}", minus: "- {}" }
   cs: { dist: sign, from: prod, plus: "+ {}", minus: "- {}" }
+  f1: { dist: sign, from: r1, plus: "(x - {})", minus: "(x + {})" }
+  f2: { dist: sign, from: r2, plus: "(x - {})", minus: "(x + {})" }
 steps:
-  - "The numbers that multiply to {prod} and add to {-psum} are {r1} and {r2}."
-  - "So factorise as ({v} - {r1})({v} - {r2})."
+  - "The numbers that multiply to {prod} and add to {npsum} are {r1} and {r2}."
+  - "So factorise as {f1}{f2}."

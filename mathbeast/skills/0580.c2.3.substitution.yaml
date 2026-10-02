@@ -2,7 +2,7 @@ id: 0580.c2.3.substitution
 syllabus: C2.3
 tier: core
 title: Substituting into an expression
-statement: "Find the value of {a}{v}^2 + {b} when {v} = {xval}."
+statement: "Find the value of {a}{v}^2 {bs} when {v} = {xval}."
 answer: "{a}*{xval}**2 + {b}"
 answer_form: exact
 transform: exact
@@ -11,7 +11,8 @@ params:
   v: { dist: const, value: x }
   a: { dist: int, range: [2, 9] }
   b: { dist: int, range: [-15, 15] }
+  bs: { dist: sign, from: b, plus: "+ {}", minus: "- {}" }
   xval: { dist: int, range: [-6, 9] }
 steps:
   - "Replace every {v} with {xval}."
-  - "Work out the square, then multiply by {a}, then add {b}."
+  - "Work out the square, then multiply by {a}, then apply the constant {b}."
