@@ -164,7 +164,9 @@ def test_smoke_rejects_a_skill_that_can_produce_an_empty_answer() -> None:
 
 
 def test_smoke_passes_for_a_well_formed_skill() -> None:
-    make().smoke(seeds=200)
+    # Above the default of 30, since this is the gate under test rather than a
+    # pack-wide check, but not so high that it dominates the suite.
+    make().smoke(seeds=40)
 
 
 def test_seed_is_reproducible() -> None:

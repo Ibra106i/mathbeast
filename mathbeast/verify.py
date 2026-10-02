@@ -16,6 +16,7 @@ import unicodedata
 from concurrent.futures import ProcessPoolExecutor, TimeoutError as FutureTimeout
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 from multiprocessing import get_context
 
 import sympy
@@ -167,8 +168,16 @@ def _parse_atom(text: str):
     return parse_expr(text, transformations=_TRANSFORMS, evaluate=True)
 
 
+@lru_cache(maxsize=8192)
 def to_expr(text: str):
     """Parse allowlisted text into a comparable SymPy object.
+
+    Cached, because parsing is the single hottest operation in the project and
+    the same strings recur constantly -- step texts are re-checked per seed,
+    and every test module loads the pack independently. SymPy objects are
+    immutable, so sharing them is safe. Failures are not cached (lru_cache does
+    not store exceptions), so a malformed input is re-parsed and rejected the
+    same way every time.
 
     Two shapes matter for IGCSE 0580 and are handled explicitly, because
     SymPy's expression parser gets both wrong:

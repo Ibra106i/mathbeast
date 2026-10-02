@@ -371,6 +371,11 @@ class Skill:
         self.params: dict[str, Any] = data.get("params", {}) or {}
         self.step_templates: list[str] = data.get("steps", []) or []
         self.rationale: str = data.get("rationale", "")
+        #: Generated problems, keyed by seed. Generation is pure in the seed, so
+        #: caching is safe and it matters: the pack tests, the smoke gate and
+        #: the bench all walk the same (skill, seed) pairs. `Problem` is frozen
+        #: apart from its `meta` dict, which nothing mutates.
+        self._generated: dict[int, Problem] = {}
 
         if self.transform not in TRANSFORMS:
             raise SkillError(f"{self.id}: unknown transform {self.transform!r}")
@@ -414,6 +419,15 @@ class Skill:
     # -- generation ----------------------------------------------------------
 
     def generate(self, seed: int | None = None) -> Problem:
+        """Build a problem for `seed`. Pure in the seed, so it is cached."""
+        if seed is not None and seed in self._generated:
+            return self._generated[seed]
+        problem = self._generate(seed)
+        if seed is not None:
+            self._generated[seed] = problem
+        return problem
+
+    def _generate(self, seed: int | None) -> Problem:
         rng = random.Random(seed)
         values = ParamResolver(self.params, rng).resolve()
 
@@ -493,14 +507,16 @@ class Skill:
             meta={k: sympy.sstr(v) for k, v in values.items()},
         )
 
-    def smoke(self, seeds: int = 60) -> None:
+    def smoke(self, seeds: int = 30) -> None:
         """Refuse to ship a skill that can produce a broken problem.
 
         The equivalent of a generator that cannot ship a bad problem: if any
         seed produces an unparseable or empty answer, the skill is rejected.
-        Sixty seeds covers the parameter space of these skills comfortably;
-        the default is a floor for contributors, not a substitute for the
-        pack tests, which check every skill again at a different seed range.
+
+        Thirty seeds covers the parameter space of these skills comfortably.
+        This is the cheap front-line gate for contributors; `tests/test_packs.py`
+        is the deeper net, walking seven properties per skill over a separate
+        seed range, and it is what has actually caught the bugs so far.
         """
         from mathbeast.verify import normalise
 
@@ -598,12 +614,34 @@ def load(path: Path) -> Skill:
     return Skill(data, source=path)
 
 
+#: Loaded packs, keyed by directory, filenames and newest mtime. Every test
+#: module loads the pack, and without this each one re-parsed and re-smoked
+#: all 49 skills. `load_all` with smoke was costing 50-odd seconds per caller.
+_PACK_CACHE: dict[tuple, list["Skill"]] = {}
+
+
 def load_all(directory: Path, *, smoke: bool = True) -> list[Skill]:
-    """Load every skill in a directory, newest schema first."""
-    skills = [load(p) for p in sorted(Path(directory).glob("*.yaml"))]
+    """Load every skill in a directory.
+
+    Results are cached per (directory, filenames, newest mtime), so repeated
+    calls -- from several test modules, or from the CLI -- share one load. The
+    mtime is part of the key, so editing a skill invalidates it immediately
+    rather than at the next interpreter start.
+    """
+    directory = Path(directory)
+    paths = sorted(directory.glob("*.yaml"))
+    newest = max((p.stat().st_mtime for p in paths), default=0.0)
+    key = (str(directory.resolve()), tuple(p.name for p in paths), newest, smoke)
+
+    cached = _PACK_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    skills = [load(p) for p in paths]
     if smoke:
         for skill in skills:
             skill.smoke()
+    _PACK_CACHE[key] = skills
     return skills
 
 

@@ -74,10 +74,17 @@ def test_reply_with_a_step_renumbered_is_rejected(problem) -> None:
 # --- degradation ------------------------------------------------------------
 
 
-def test_ollama_degrades_when_the_server_is_absent(problem) -> None:
-    narrator = OllamaNarrator(model="definitely-not-pulled", url="http://127.0.0.1:1")
+def test_ollama_degrades_when_the_server_is_absent(problem, monkeypatch) -> None:
+    """No real socket: a refused connection would cost the real timeout."""
+    narrator = OllamaNarrator(model="definitely-not-pulled")
+
+    def refuse(prompt: str) -> str:
+        raise ConnectionRefusedError("no server on that port")
+
+    monkeypatch.setattr(narrator, "_call", refuse)
     lines, report = narrate_and_check(narrator, problem)
     assert narrator.degraded, "should record why it fell back"
+    assert "ConnectionRefusedError" in narrator.degraded
     assert report.ok
     assert [pid for pid, _ in lines] == [s.index for s in problem.steps]
 

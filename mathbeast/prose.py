@@ -30,11 +30,34 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 import sympy
 
 from mathbeast.skill import Problem, Step
 from mathbeast.verify import ParseRejected, normalise, to_expr
+
+
+@dataclass(frozen=True)
+class TrustSet:
+    """What a step's narration may mention.
+
+    `strings` is the fast path. A claim whose canonical form already appears
+    verbatim is grounded without touching `simplify`. Without it, every claim
+    ran a symbolic comparison against every atom of the step's expressions --
+    dozens of `simplify` calls to answer what a set lookup answers.
+    """
+
+    strings: frozenset[str]
+    exprs: tuple
+
+    def __len__(self) -> int:
+        return len(self.exprs)
+
+
+#: What narration attached to a step that was never verified is allowed to say:
+#: nothing.
+_NOTHING_TRUSTED = TrustSet(strings=frozenset(), exprs=())
 
 
 # A maximal run of characters that could form a mathematical claim.
@@ -188,9 +211,8 @@ def _is_evaluable(claim: str) -> bool:
     return True
 
 
-def _claim_in(claim: str, trusted: list) -> bool:
+def _claim_in(claim: str, trusted: TrustSet) -> bool:
     """Is this claim traceable to something the engine verified?"""
-    left = None
     try:
         left = to_expr(claim)
     except Exception:  # noqa: BLE001
@@ -198,7 +220,10 @@ def _claim_in(claim: str, trusted: list) -> bool:
         # See `_expressions_in` for why no exception types are enumerated.
         return False
 
-    for target in trusted:
+    if sympy.sstr(left) in trusted.strings:
+        return True
+
+    for target in trusted.exprs:
         try:
             if sympy.simplify(left - target) == 0:
                 return True
@@ -209,7 +234,8 @@ def _claim_in(claim: str, trusted: list) -> bool:
     return False
 
 
-def _step_trust(step: Step) -> list:
+@lru_cache(maxsize=4096)
+def _step_trust(step: Step) -> TrustSet:
     """What this step's narration is allowed to mention.
 
     Note what is *not* done here: the step's prose is never handed to the
@@ -218,14 +244,26 @@ def _step_trust(step: Step) -> list:
     `14.0*R*e*c*a*l*l*...` -- every letter glued into one product. Prose is
     therefore mined with `extract_claims`, which has the digit/operator rule,
     and each extracted claim is parsed individually.
+
+    Cached on the Step, which is a frozen dataclass and so hashable.
     """
-    trusted: list = []
+    exprs: list = []
     for source in (step.expr_from, step.expr_to, step.expr_raw):
         if source:
-            trusted.extend(_expressions_in(source))
+            exprs.extend(_expressions_in(source))
     for claim in extract_claims(step.text):
-        trusted.extend(_expressions_in(claim))
-    return trusted
+        exprs.extend(_expressions_in(claim))
+
+    # Deduplicate. `_expressions_in` overlaps heavily between expr_from and
+    # expr_to, and each duplicate is another pass of the loop below.
+    unique: list = []
+    seen: set[str] = set()
+    for item in exprs:
+        key = sympy.sstr(item)
+        if key not in seen:
+            seen.add(key)
+            unique.append(item)
+    return TrustSet(strings=frozenset(seen), exprs=tuple(unique))
 
 
 def check_narration(problem: Problem, lines: list[tuple[int, str]]) -> NarrationReport:
@@ -252,7 +290,9 @@ def check_narration(problem: Problem, lines: list[tuple[int, str]]) -> Narration
     claims: list[Claim] = []
     for step_id, text in lines:
         step = by_id.get(step_id)
-        trusted = _step_trust(step) if step else []
+        # An invented step has nothing verified, so nothing is trusted. Every
+        # claim made against it is unsupported, which is the correct reading.
+        trusted = _step_trust(step) if step is not None else _NOTHING_TRUSTED
         for claim_text in extract_claims(text):
             if _is_evaluable(claim_text):
                 claims.append(

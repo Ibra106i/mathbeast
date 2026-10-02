@@ -62,10 +62,17 @@ def test_explain_never_claims_a_model_it_did_not_use(capsys) -> None:
     assert "ollama" not in out.lower().split("explanation")[0]
 
 
-def test_explain_degrades_when_ollama_is_absent(capsys) -> None:
-    out = run(
-        capsys, "explain", "expand_quadratic", "--seed", "1", "--narrator", "ollama"
-    )
+def test_explain_degrades_when_ollama_is_absent(capsys, monkeypatch) -> None:
+    """No real socket: waiting out the real timeout would cost 4 seconds."""
+    import mathbeast.cli as cli
+    import mathbeast.narrate as narrate
+
+    class Refusing(narrate.OllamaNarrator):
+        def _call(self, prompt: str) -> str:
+            raise ConnectionRefusedError("no server on that port")
+
+    monkeypatch.setattr(cli, "OllamaNarrator", Refusing)
+    out = run(capsys, "explain", "expand_quadratic", "--seed", "1", "--narrator", "ollama")
     assert "model unavailable" in out
     assert "Verified answer:" in out
 
