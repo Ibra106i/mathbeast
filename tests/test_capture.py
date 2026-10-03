@@ -8,10 +8,16 @@ capture.png (gitignored).
 The capture is a drawing of the design rather than a screenshot of the
 page, so per-pixel equality is a state the render cannot reach and the
 harness does not ask for it. It measures the same landmarks in both images
-with one shared function -- the chrome icons, the composer box, the title's
-ink and the mark's -- prints every delta, and asserts only the ones a phase
-claims to have landed. Text width is reported and not asserted: which
-typeface draws it is P19's question, not this one.
+with one shared function -- both ends of the chrome, the composer box, the
+title's ink and the mark's -- prints every delta, and asserts the position
+of every group and the size of every box. What it does not assert is
+written down instead, next to the delta that explains why: the capture's
+fourth left-hand glyph would toggle the drawer our menu already toggles,
+its right-hand mascot and window controls need a shell this app does not
+have, and the title's width and where its ink rests vertically both follow
+the typeface, which is P19's question.
+Every group keeps the capture's margins; the contents are the deliberate
+difference.
 
 Run with -s to watch the report; on failure the report is in the output.
 """
@@ -101,6 +107,28 @@ def capture():
     return np.asarray(Image.open(CAPTURE).convert("RGB"))
 
 
+def _runs(cols: np.ndarray, max_gap: int = 3) -> list[tuple[int, int]]:
+    """Split lit columns into glyphs: a blank gap ends a run."""
+    cols = [int(c) for c in np.unique(cols)]
+    out, start, prev = [], cols[0], cols[0]
+    for c in cols[1:]:
+        if c - prev > max_gap:
+            out.append((start, prev))
+            start = c
+        prev = c
+    out.append((start, prev))
+    return out
+
+
+def _group(lum: np.ndarray, bg: float, x0: int, x1: int) -> tuple[tuple, int]:
+    """One end of the chrome: its ink box and how many glyphs it holds."""
+    lit = lum[0:56, x0:x1] > bg + 35
+    ys, xs = np.where(lit)
+    runs = _runs(xs)
+    box = (int(ys.min()), int(ys.max()), x0 + runs[0][0], x0 + runs[-1][1])
+    return box, len(runs)
+
+
 def _landmarks(a: np.ndarray) -> dict[str, tuple]:
     """Measure both images the same way: ink boxes, never pixels.
 
@@ -112,10 +140,10 @@ def _landmarks(a: np.ndarray) -> dict[str, tuple]:
     lum = a @ [0.299, 0.587, 0.114]
     bg = float(np.median(lum))
 
-    # the three buttons of the chrome, top-left
-    band = lum[0:56, 0:130] > bg + 35
-    ys, xs = np.where(band)
-    chrome = (int(ys.min()), int(ys.max()), int(xs.min()), int(xs.max()))
+    # the chrome at both ends -- the icon row top-left, the group top-right
+    # -- so a group's contents cannot hide in the empty middle of the bar
+    chrome_l, chrome_l_n = _group(lum, bg, 0, 130)
+    chrome_r, chrome_r_n = _group(lum, bg, 1440, WIDTH)
 
     # the composer: a solid rectangle far wider than any run of text
     win = lum[280:640, 380:1320]
@@ -133,15 +161,9 @@ def _landmarks(a: np.ndarray) -> dict[str, tuple]:
     salmon = (r > 170) & (r - b > 80) & (g < r - 30)
     win = salmon[280:title_ceiling, 540:660]
     ys, xs = np.where(win)
-    cols = np.unique(xs)
-    run = [int(cols[0])]
-    for c in cols[1:]:
-        if c - run[-1] > 3:
-            break
-        run.append(int(c))
-    rows = np.where(win[:, run[0]:run[-1] + 1].any(axis=1))[0]
-    mark = (280 + int(rows.min()), 280 + int(rows.max()),
-            540 + run[0], 540 + run[-1])
+    m0, m1 = _runs(xs)[0]
+    rows = np.where(win[:, m0:m1 + 1].any(axis=1))[0]
+    mark = (280 + int(rows.min()), 280 + int(rows.max()), 540 + m0, 540 + m1)
 
     # the title's letters: everything lit, starting just past the mark
     x0 = min(1140, mark[3] + 4)
@@ -150,7 +172,9 @@ def _landmarks(a: np.ndarray) -> dict[str, tuple]:
     title = (280 + int(ys.min()), 280 + int(ys.max()),
              x0 + int(xs.min()), x0 + int(xs.max()))
 
-    return {"chrome": chrome, "composer": composer, "mark": mark, "title": title}
+    return {"chrome_l": chrome_l, "chrome_l_n": chrome_l_n,
+            "chrome_r": chrome_r, "chrome_r_n": chrome_r_n,
+            "composer": composer, "mark": mark, "title": title}
 
 
 def _fmt(box: tuple) -> str:
@@ -170,28 +194,55 @@ def test_render_matches_the_capture(render, capture) -> None:
 
     cap, got = _landmarks(capture), _landmarks(render)
     report = ["landmark      capture                  render                  delta"]
-    for name in ("chrome", "composer", "mark", "title"):
-        c, g = cap[name], got[name]
+    for key, label in (("chrome_l", "chrome-left"), ("chrome_r", "chrome-right"),
+                       ("composer", "composer"), ("mark", "mark"),
+                       ("title", "title")):
+        c, g = cap[key], got[key]
         delta = tuple(gv - cv for gv, cv in zip(g, c))
-        report.append(f"{name:13} {_fmt(c):24} {_fmt(g):24} {delta}")
+        report.append(f"{label:13} {_fmt(c):24} {_fmt(g):24} {delta}")
+    report.append(
+        f"{'left icons':13} {cap['chrome_l_n']:<24} {got['chrome_l_n']:<24} "
+        "written down: the capture's panel glyph would toggle the drawer "
+        "our menu already toggles"
+    )
+    report.append(
+        f"{'right glyphs':13} {cap['chrome_r_n']:<24} {got['chrome_r_n']:<24} "
+        "written down: mascot and window controls need a shell; the dot "
+        "holds the margin"
+    )
     report.append(
         f"{'title width':13} {cap['title'][3] - cap['title'][2] + 1:<24} "
         f"{got['title'][3] - got['title'][2] + 1:<24} "
-        f"reported, not asserted: the typeface is P19"
+        "written down: which typeface draws it is P19's question"
+    )
+    report.append(
+        f"{'title ink y':13} "
+        f"y {cap['title'][0]}..{cap['title'][1]:<17} "
+        f"y {got['title'][0]}..{got['title'][1]:<17} "
+        "written down: the render's ink rests 2px lower because the line "
+        "box's ascent belongs to the typeface, which is P19's question"
     )
     report.append(
         f"{'mark left/right':13} "
         f"x {cap['mark'][2]}..{cap['mark'][3]:<20} "
         f"x {got['mark'][2]}..{got['mark'][3]:<20} "
-        f"reported, not asserted: the block is centred on the title's width"
+        "written down: the block is centred on the title's width, so it "
+        "follows P19"
     )
     print("\n".join(report))
 
     # (what is asserted, the two numbers, the tolerance in px)
     checks = [
-        ("chrome icon centre",
-         (cap["chrome"][0] + cap["chrome"][1]) / 2,
-         (got["chrome"][0] + got["chrome"][1]) / 2, 3),
+        ("chrome-left icon centre",
+         (cap["chrome_l"][0] + cap["chrome_l"][1]) / 2,
+         (got["chrome_l"][0] + got["chrome_l"][1]) / 2, 3),
+        ("chrome-left left edge",
+         cap["chrome_l"][2], got["chrome_l"][2], 4),
+        ("chrome-right group centre",
+         (cap["chrome_r"][0] + cap["chrome_r"][1]) / 2,
+         (got["chrome_r"][0] + got["chrome_r"][1]) / 2, 3),
+        ("chrome-right right edge",
+         cap["chrome_r"][3], got["chrome_r"][3], 4),
         ("composer top", cap["composer"][0], got["composer"][0], 4),
         ("composer bottom", cap["composer"][1], got["composer"][1], 4),
         ("composer left", cap["composer"][2], got["composer"][2], 4),

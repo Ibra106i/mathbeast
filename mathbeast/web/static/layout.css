@@ -19,7 +19,11 @@
 
 /* --- chrome bar ----------------------------------------------------------- */
 
-/* Icons sit centred at y=16 in the capture, which puts the bar at 32px. */
+/* Icons sit centred at y=16 in the capture, which puts the bar at 32px; the
+ * harness measures the render's centre at the same 16. Its ink box stops 28px
+ * short of the capture's, because the capture holds four glyphs here and this
+ * row holds three -- the fourth is the panel toggle our Menu already performs.
+ * Written down, not missing. */
 .chrome {
   flex: none;
   height: 32px;
@@ -248,8 +252,9 @@
 }
 
 .stage-title__mark svg {
-  /* 38px draws the asterisk's ink at 32x36; the capture's mark measures
-     33x33. */
+  /* 38px draws the asterisk's ink at 32x32; the capture's mark measures
+     33x33 -- a pixel smaller each way, which the harness reports inside
+     its 6px width and 4px height tolerances. */
   width: 38px;
   height: 38px;
   fill: none;
