@@ -67,6 +67,25 @@ def test_the_greeting_is_the_editable_placeholder(client) -> None:
     assert '<span class="stage-title__mark" aria-hidden="true">' in body
 
 
+def test_the_greeting_comes_from_the_user_config(client, monkeypatch, tmp_path) -> None:
+    """Editing the file must change the page, not just the module.
+
+    The route reads per request precisely so a hand edit takes effect on the
+    next reload; this is the test that says it does.
+    """
+    from mathbeast.web import config
+
+    monkeypatch.setattr(config, "CONFIG_FILE", tmp_path / "config.json")
+    assert "Coffee and Claude time?" in client.get("/").text
+
+    (tmp_path / "config.json").write_text(
+        '{"title": "Late night with partial fractions"}', encoding="utf-8"
+    )
+    body = client.get("/").text
+    assert "Late night with partial fractions" in body
+    assert "Coffee and Claude time?" not in body
+
+
 @pytest.mark.parametrize("path", ["/", "/inspector"])
 def test_the_document_starts_with_the_doctype(client, path) -> None:
     """Whitespace ahead of the doctype is stripped, not merely tolerated.

@@ -16,16 +16,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from mathbeast.models import Registry, build_registry, measure
+from mathbeast.web.config import load_title
 
 HERE = Path(__file__).parent
 TEMPLATES = HERE / "templates"
 STATIC = HERE / "static"
-
-#: What the home surface greets with. Not the product name -- it is the one
-#: line on the page a user is meant to overwrite, so it ships as a placeholder
-#: rather than something chosen for them. The user's own text, once set,
-#: takes precedence over this.
-STAGE_TITLE = "Coffee and Claude time?"
 
 #: Views that exist. Anything not listed here renders as an honest stub rather
 #: than a 404, because a nav item that leads nowhere is worse than one that
@@ -72,7 +67,10 @@ def create_app(registry: Registry | None = None) -> FastAPI:
                 **base_context(request),
                 "status": status,
                 "models": status.models,
-                "stage_title": STAGE_TITLE,
+                # Read per request, not once at startup: editing the file by
+                # hand is a supported way to change this, and a value cached
+                # behind a running server would not show up until it restarted.
+                "stage_title": load_title(),
                 # Nothing on the stage is a "view", so no nav item is current.
                 "current": "",
             },
