@@ -64,6 +64,16 @@
   <div class="scrim" data-drawer-close hidden></div>
 
   <main class="stage-main">
-    {% block content %}{% endblock %}
+    {% block content %}
+      <div class="stage-block">
+        <h1 class="stage-title">
+          {# The mark is decorative: it carries no meaning the words do not,
+             and reading it aloud would be noise. The h1 reads as the title
+             alone. #}
+          <span class="stage-title__mark" aria-hidden="true">{{ icon("star") }}</span>
+          <span class="stage-title__text">{{ stage_title }}</span>
+        </h1>
+      </div>
+    {% endblock %}
   </main>
 {% endblock %}

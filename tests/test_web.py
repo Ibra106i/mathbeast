@@ -54,6 +54,19 @@ def test_the_inspector_is_still_reachable_from_the_root(client) -> None:
     assert 'href="/inspector"' in body
 
 
+def test_the_greeting_is_the_editable_placeholder(client) -> None:
+    """The default text ships, and ships as something meant to be replaced.
+
+    It is not the product name: a greeting the user owns is the point of the
+    line, so a fresh install shows the placeholder rather than our branding.
+    """
+    body = client.get("/").text
+    assert "Coffee and Claude time?" in body
+    assert 'class="stage-title"' in body
+    # Decorative mark must not be announced; the h1 reads as words alone.
+    assert '<span class="stage-title__mark" aria-hidden="true">' in body
+
+
 @pytest.mark.parametrize("path", ["/", "/inspector"])
 def test_the_document_starts_with_the_doctype(client, path) -> None:
     """Whitespace ahead of the doctype is stripped, not merely tolerated.

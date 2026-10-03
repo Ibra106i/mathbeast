@@ -21,6 +21,12 @@ HERE = Path(__file__).parent
 TEMPLATES = HERE / "templates"
 STATIC = HERE / "static"
 
+#: What the home surface greets with. Not the product name -- it is the one
+#: line on the page a user is meant to overwrite, so it ships as a placeholder
+#: rather than something chosen for them. The user's own text, once set,
+#: takes precedence over this.
+STAGE_TITLE = "Coffee and Claude time?"
+
 #: Views that exist. Anything not listed here renders as an honest stub rather
 #: than a 404, because a nav item that leads nowhere is worse than one that
 #: says it isn't built yet.
@@ -66,6 +72,7 @@ def create_app(registry: Registry | None = None) -> FastAPI:
                 **base_context(request),
                 "status": status,
                 "models": status.models,
+                "stage_title": STAGE_TITLE,
                 # Nothing on the stage is a "view", so no nav item is current.
                 "current": "",
             },
