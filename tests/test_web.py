@@ -896,3 +896,153 @@ def test_every_colour_pair_the_page_uses_reads_clearly(selector: str) -> None:
     base = BASE.get(selector, "--bg")
     ratio = _contrast(_paint(fg, base), _paint(bg, base))
     assert ratio >= 4.5, f"{selector}: {fg} on {bg} over {base} is {ratio:.2f}:1"
+
+
+# --- narrow screens ------------------------------------------------------------
+#
+# The capture describes a 1622px window and nothing below it, so the desktop
+# numbers are the ones compared against it and may not move. The audit run for
+# this phase measured the same page at every width down to 320 and reported
+# exactly where it stops fitting: a 190px nav column eating the page, a status
+# row taller than the bar that clips it, and a bottom row 6px wider than a
+# 320px phone. Those are the only things below the line.
+
+
+def _media_blocks(path: Path) -> list[tuple[str, str]]:
+    """Every `@media` block in a stylesheet: its condition and its body.
+
+    Braces are matched by depth rather than by the first `}` -- the bodies
+    hold whole rules, and a regex that stopped at the first one would hand
+    back a condition with half a stylesheet attached.
+    """
+    text = path.read_text(encoding="utf-8")
+    blocks: list[tuple[str, str]] = []
+    at = 0
+    while True:
+        start = text.find("@media", at)
+        if start < 0:
+            return blocks
+        brace = text.find("{", start)
+        depth, i = 1, brace + 1
+        while depth:
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+            i += 1
+        blocks.append((" ".join(text[start + len("@media") : brace].split()), text[brace + 1 : i - 1]))
+        at = i
+
+
+def _without_media(path: Path) -> str:
+    """The sheet as it applies at the capture's width: media blocks removed.
+
+    Read off the top level so a value that exists only under a breakpoint
+    cannot be mistaken for one the pixel harness will ever see.
+    """
+    text = path.read_text(encoding="utf-8")
+    out, at = [], 0
+    while True:
+        start = text.find("@media", at)
+        if start < 0:
+            out.append(text[at:])
+            return "".join(out)
+        out.append(text[at:start])
+        depth, i = 1, text.find("{", start) + 1
+        while depth:
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+            i += 1
+        at = i
+
+
+def _declared(css: str, selector: str, prop: str) -> str:
+    """One declaration of one selector, read out of stylesheet text."""
+    match = re.search(re.escape(selector) + r"\s*\{([^{}]*)\}", css)
+    assert match, f"{selector} is not declared where the test looked"
+    decl = re.search(rf"(?<![\w-]){re.escape(prop)}\s*:\s*([^;]+);", match.group(1))
+    assert decl, f"{selector} declares no {prop}"
+    return decl.group(1).strip()
+
+
+def test_both_sheets_agree_on_where_narrow_begins() -> None:
+    """A breakpoint is one number, not two opinions.
+
+    640px is where the composer stops being the measured 597px box: 640 minus
+    the stage's own 40px of padding is 600, and below that the row can never
+    be the row in the capture. One query per sheet, the same condition, and
+    the stage rule paired with it is the 8px a side the 320px audit asked for
+    -- 259px of bottom row against 253px of room.
+    """
+    for name in ("layout.css", "mathbeast.css"):
+        narrow = [
+            cond
+            for cond, _ in _media_blocks(_static() / name)
+            if cond.startswith("(max-width:")
+        ]
+        assert narrow == ["(max-width: 640px)"], f"{name}: {narrow}"
+
+    stage = dict(_media_blocks(_static() / "layout.css"))["(max-width: 640px)"]
+    assert _declared(stage, ".stage-main", "padding-inline") == "12px"
+
+
+def test_measured_geometry_lives_outside_every_media_query() -> None:
+    """The capture's numbers are the ones at 1622px, and only those.
+
+    Each of these was read off the rendered page in the phase that measured
+    it. A value living inside a breakpoint cannot move a desktop pixel, and
+    one living outside it cannot answer a phone -- so the split is what keeps
+    the two audits from drifting apart.
+    """
+    stage = _without_media(_static() / "layout.css")
+    shell = _without_media(_static() / "mathbeast.css")
+
+    assert _declared(stage, ".stage-main", "padding-inline") == "20px"
+    assert _declared(stage, ".stage-main", "padding-bottom") == "126px"
+    assert _declared(stage, ".stage-block", "max-width") == "var(--composer-width)"
+    assert _declared(stage, ".composer", "min-height") == "var(--composer-min-height)"
+    assert _declared(stage, ".composer-bar", "min-height") == "25px"
+    assert _declared(shell, ".shell", "grid-template-columns") == "190px minmax(0, 1fr)"
+    assert _declared(shell, ".topbar", "min-height") == "54px"
+    assert _declared(shell, ".sidenav", "top") == "var(--topbar-h, 54px)"
+
+
+def test_the_narrow_query_touches_only_what_the_audit_reported() -> None:
+    """Below the line, only what was measured to fail may move.
+
+    The inspector's audit reported the nav column, the sideways-scrolling
+    document and the status row clipped by its bar; the stage's reported the
+    padding. Anything else reaching into a media query is a desktop number
+    waiting to drift, so the selectors are named rather than counted.
+    """
+    expected = {
+        "layout.css": {".stage-main"},
+        "mathbeast.css": {".shell", ".sidenav", ".navitem", ".content"},
+    }
+    for name, want in expected.items():
+        got: set[str] = set()
+        for cond, body in _media_blocks(_static() / name):
+            if not cond.startswith("(max-width:"):
+                continue
+            for raw, _decls in _RULE.findall(body):
+                got.update(sel.strip() for sel in raw.split(","))
+        assert got == want, f"{name}: {sorted(got ^ want)}"
+
+
+def test_the_height_the_bar_grows_to_is_handed_to_the_sticky_nav() -> None:
+    """The sidenav sits under a bar whose height lives in the DOM.
+
+    The status row wraps from one line to five across this range, so the bar
+    grows with text no stylesheet can count -- measured at -11.5px above the
+    top of the window at 768 with a fixed 54, and -41.8px at 360. The script
+    measures what it grew to; the CSS falls back to 54, the unwrapped height,
+    whenever it has not run; and the nav's own height is taken from the same
+    number so it ends at the viewport rather than at a constant.
+    """
+    js = (_static() / "mathbeast.js").read_text(encoding="utf-8")
+    assert 'document.documentElement.style.setProperty("--topbar-h"' in js
+    assert "syncTopbarHeight();" in js
+    css = (_static() / "mathbeast.css").read_text(encoding="utf-8")
+    assert "var(--topbar-h, 54px)" in css

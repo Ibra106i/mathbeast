@@ -39,7 +39,13 @@ html, body {
   align-items: center;
   gap: 18px;
   padding: 0 20px;
-  height: 54px;
+  /* The status row wraps as the window narrows -- 24px of it at 1622, 56px
+     at 1024, 76px at 768, 137px at 360 -- and a fixed 54px bar clipped every
+     pixel it grew past: measured at -11.5px of the row sitting above the top
+     of the window at 768, so the first line of the status was gone before
+     the page was read. A floor keeps the bar at the measured 54 wherever the
+     row fits on one line, which is the width the capture was taken at. */
+  min-height: 54px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
@@ -96,15 +102,21 @@ html, body {
 }
 
 /* The drawer, with nowhere to slide to: same fill, same rule, so the nav is
-   the same object whether it is open over the stage or built into the page. */
+   the same object whether it is open over the stage or built into the page.
+
+   It sticks under the top bar, and that bar's height stops being a constant
+   as soon as the status row wraps -- it then depends on how much text the
+   backend is reporting, which no stylesheet can compute. The script measures
+   it and publishes it; 54 is the bar's unwrapped height and the value the
+   page stands on before that script runs. */
 .sidenav {
   position: sticky;
-  top: 54px;
+  top: var(--topbar-h, 54px);
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 18px 12px;
-  height: calc(100vh - 54px);
+  height: calc(100vh - var(--topbar-h, 54px));
   background: var(--surface-sunken);
   border-right: 1px solid var(--border);
 }
@@ -282,6 +294,42 @@ select:focus-visible {
 }
 
 .htmx-request .btn { opacity: 0.6; }
+
+/* --- narrow screens ---------------------------------------------------------
+   The capture describes a 1622px window and nothing below it, so nothing
+   here may touch the desktop numbers. What the measurement says cannot
+   survive: a 190px nav column leaves 170px of page at a 360px viewport and
+   the document then scrolled sideways on its own, 450 against 360 -- the
+   nav stands above the page instead of beside it, and the status row, which
+   wraps from one line to five across this range, is given a bar that grows
+   with it above rather than clipped at 54px. The breakpoint is 640 because
+   that is where the composer stops being the 597px box in the capture
+   (640 - 40 of stage padding = 600), so the stage's own rule below is
+   written next to this one. */
+@media (max-width: 640px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidenav {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    gap: 6px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .navitem {
+    white-space: nowrap;
+  }
+
+  .content {
+    padding: 18px 14px 48px;
+  }
+}
 
 /* Every duration on this page comes from --fast or --med, so asking for no
    motion is one switch rather than a hunt. Nothing animates outright -- only

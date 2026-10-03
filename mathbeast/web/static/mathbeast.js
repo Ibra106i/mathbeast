@@ -29,6 +29,18 @@
     });
   }
 
+  // The top bar's height stops being a constant the moment the status row
+  // wraps -- it becomes however tall that row's text makes it, which depends on
+  // what the backend is reporting and no stylesheet can compute. The sidenav
+  // sticks under it and takes its own height from it, so the one script that
+  // exists measures it and hands it over. Until then the CSS falls back to 54,
+  // the unwrapped height, which is the desktop number from the capture.
+  function syncTopbarHeight() {
+    var bar = document.querySelector(".topbar");
+    if (!bar) return;
+    document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px");
+  }
+
   // The off-canvas menu on the home surface.
   //
   // It does not slide, and that is settled rather than forgotten. `hidden` is
@@ -286,6 +298,9 @@
 
   document.body.addEventListener("htmx:afterSwap", function () {
     markPlanned();
+    // A poll that brings longer status text rewraps the row, so the bar
+    // underneath it is no longer the height that was published last time.
+    syncTopbarHeight();
   });
 
   var drawerReady = false;
@@ -293,6 +308,8 @@
   document.addEventListener("DOMContentLoaded", function () {
     markPlanned();
     initTitleEditor();
+    syncTopbarHeight();
+    window.addEventListener("resize", syncTopbarHeight);
     if (!drawerReady) {
       initDrawer();
       drawerReady = true;

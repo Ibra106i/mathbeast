@@ -471,3 +471,23 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* --- narrow screens ---------------------------------------------------------
+   The capture describes a 1622px window and nothing below it, so every rule
+   here is answerable to a measurement rather than to taste:
+
+   - padding-inline is the one number that moves. The bottom row measures
+     259px of content against 253px of room at a 320px viewport -- 8px back
+     from each side leaves 269 -- and at 640px the viewport minus the desktop
+     20px of padding is 600, three pixels short of the composer's own 597.
+   - padding-bottom stays at 126px. It measured clean at every width down to
+     320 (no doc scroll, the block never lands under the chrome), so there is
+     nothing to change and changing it would move a desktop number.
+   - the title is left to wrap to two lines rather than shrink: it does not
+     overflow, and a font size written here would be a type size outside
+     tokens.css, which is the one file allowed to declare them. */
+@media (max-width: 640px) {
+  .stage-main {
+    padding-inline: 12px;
+  }
+}
