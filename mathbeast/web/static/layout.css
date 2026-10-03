@@ -297,3 +297,56 @@
   color: var(--down-text);
   text-align: center;
 }
+
+/* --- composer ------------------------------------------------------------- */
+
+/* The box from the capture: 615 wide, 91 tall, radius 14, a step lighter than
+   the page and light enough to need no rule of its own to be legible.
+
+   Padding sits on the children rather than here so the bottom row can run
+   edge to edge when it lands -- a bar inset by the input's own padding would
+   read as a second box drawn inside the first. */
+.composer {
+  width: 100%;
+  min-height: 91px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--composer-radius);
+}
+
+/* Focus has to be visible to a keyboard user, but only while focus is
+   actually in the box: an always-on ring is a pixel the capture does not
+   have, and the resting state is what the pixel harness compares. */
+.composer:focus-within {
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.composer-input {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 14px 15px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  caret-color: var(--accent);
+  resize: none;
+  overflow: auto;
+}
+
+.composer-input:focus {
+  outline: none;
+}
+
+/* The placeholder is the only text in the resting box, so it carries the
+   faintest ink on the surface rather than the placeholder grey browsers
+   pick on their own. */
+.composer-input::placeholder {
+  color: var(--text-faint);
+  opacity: 1;
+}

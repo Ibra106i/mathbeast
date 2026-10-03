@@ -97,6 +97,65 @@ def test_the_editor_is_told_the_ceiling_rather_than_reimplementing_it(client) ->
     assert 'data-max-title="%d"' % MAX_TITLE in client.get("/").text
 
 
+# --- the composer -----------------------------------------------------------
+
+
+def test_the_composer_is_a_box_you_can_type_into(client) -> None:
+    """One textarea in a form, and nothing else.
+
+    The pills, the send button, the attachments are all chrome bolted around
+    a text field, so the field is what has to be right first. Anything the
+    box claims to do that it cannot yet do does not belong in it yet.
+    """
+    body = client.get("/").text
+    assert '<form class="composer" action="/ask" method="get">' in body
+    assert 'id="composer-input"' in body
+    assert 'placeholder="Ask MathBeast anything..."' in body
+
+
+def test_the_composer_sends_the_question_where_the_truth_is_told(client) -> None:
+    """Its action is a view that exists and is honest about not existing.
+
+    Pointing a form at a URL that 404s would be worse than the input not
+    being there. `/ask` says plainly that it is unimplemented, and it is
+    also the address the real thing will live at -- so the form does not
+    need rewriting when it arrives, only the page behind it.
+    """
+    import re
+
+    body = client.get("/").text
+    action = re.search(r'<form class="composer" action="([^"]+)"', body).group(1)
+
+    response = client.get(action, params={"q": "3x + 7 = 25"})
+
+    assert response.status_code == 200
+    assert "<h1>Ask</h1>" in response.text
+    assert "Not built yet" in response.text
+
+
+def test_the_composer_does_not_put_its_answer_where_it_could_be_lost(
+    client,
+) -> None:
+    """The question is sent as a GET, not as a POST.
+
+    Nothing is written: there is no session to write to, no store to write
+    to, and a form that quietly posts somewhere it cannot persist would be
+    the one part of this page lying about what it does.
+    """
+    response = client.post("/ask", data={"q": "3x + 7 = 25"})
+    # /ask is declared GET-only, so a POST is refused rather than accepted
+    # and forgotten.
+    assert response.status_code == 405
+
+
+def test_the_composer_names_itself_without_relying_on_the_placeholder(
+    client,
+) -> None:
+    """A placeholder is a hint, not a label: it is gone the moment a single
+    character is typed, and the field has to stay named after that."""
+    assert 'aria-label="Ask a question"' in client.get("/").text
+
+
 # --- saving the greeting ----------------------------------------------------
 
 

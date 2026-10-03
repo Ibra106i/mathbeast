@@ -85,6 +85,21 @@
            than being injected so the live region exists before the message
            does -- role="alert" announces on content change, not on creation. #}
         <p class="stage-title__error" id="stage-title-error" role="alert" hidden></p>
+
+        {# A plain form to the view whose name matches what the box is for.
+           There is no chat backend to post to, and an input that swallows
+           typing and does nothing on Enter is a broken affordance. Sending
+           the question to /ask lands on an honest stub that says as much --
+           truthful today, and already the right URL for whenever that view
+           is built. #}
+        <form class="composer" action="/ask" method="get">
+          <textarea class="composer-input"
+                    id="composer-input"
+                    name="q"
+                    rows="1"
+                    aria-label="Ask a question"
+                    placeholder="Ask MathBeast anything..."></textarea>
+        </form>
       </div>
     {% endblock %}
   </main>
