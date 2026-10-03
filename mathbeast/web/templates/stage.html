@@ -71,8 +71,20 @@
              and reading it aloud would be noise. The h1 reads as the title
              alone. #}
           <span class="stage-title__mark" aria-hidden="true">{{ icon("star") }}</span>
-          <span class="stage-title__text">{{ stage_title }}</span>
+          {# The words are the button. Wrapping them in one rather than
+             bolting a pencil icon on the side means the heading keeps its
+             text as its accessible name, gives keyboard users something to
+             land on, and still looks like the plain sentence it replaces. #}
+          <button type="button"
+                  class="stage-title__text"
+                  id="stage-title-text"
+                  data-max-title="{{ max_title }}"
+                  title="Edit greeting">{{ stage_title }}</button>
         </h1>
+        {# Only ever populated when a save fails. Stays in the DOM rather
+           than being injected so the live region exists before the message
+           does -- role="alert" announces on content change, not on creation. #}
+        <p class="stage-title__error" id="stage-title-error" role="alert" hidden></p>
       </div>
     {% endblock %}
   </main>

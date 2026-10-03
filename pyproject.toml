@@ -17,7 +17,15 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.4"]
 narrate = ["requests>=2.31"]
-web = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "jinja2>=3.1"]
+# python-multipart is FastAPI's own requirement for reading a form body, and
+# form bodies are how every POST on this surface arrives. Without it
+# `request.form()` raises, so it is not optional in the same way uvicorn is not.
+web = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+]
 
 [project.scripts]
 mathbeast = "mathbeast.cli:main"

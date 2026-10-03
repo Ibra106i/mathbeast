@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from mathbeast.models import Registry, build_registry, measure
-from mathbeast.web.config import load_title
+from mathbeast.web.config import MAX_TITLE, load_title, save_title
 
 HERE = Path(__file__).parent
 TEMPLATES = HERE / "templates"
@@ -71,6 +71,9 @@ def create_app(registry: Registry | None = None) -> FastAPI:
                 # hand is a supported way to change this, and a value cached
                 # behind a running server would not show up until it restarted.
                 "stage_title": load_title(),
+                # Reaches the field as a data attribute so the editor can
+                # never reject text the file would have taken.
+                "max_title": MAX_TITLE,
                 # Nothing on the stage is a "view", so no nav item is current.
                 "current": "",
             },
@@ -134,8 +137,28 @@ def create_app(registry: Registry | None = None) -> FastAPI:
             },
         )
 
+    async def posted(request: Request, key: str) -> str:
+        """One field from a posted form, falling back to the query string.
+
+        A body, not a query string: that is what htmx sends for
+        `<form hx-post>`. Reading one needs python-multipart, hence its place
+        in the web extra -- Starlette raises before it ever looks at the
+        content type, so leaving it out makes every POST here fail.
+
+        The query fallback is not decoration. `POST /api/model` was declared
+        as a plain query parameter, so that is the only shape its test ever
+        exercised, and a caller written against that signature would have
+        started failing the moment the form path was fixed. Accepting both
+        keeps it working and costs one branch.
+        """
+        value = (await request.form()).get(key)
+        if value is None:
+            value = request.query_params.get(key)
+        return str(value) if value is not None else ""
+
     @app.post("/api/model", response_class=HTMLResponse)
-    def api_model(request: Request, model: str = "") -> HTMLResponse:
+    async def api_model(request: Request) -> HTMLResponse:
+        model = await posted(request, "model")
         if model:
             reg.set_model(model)
         status = reg.backend.status()
@@ -144,6 +167,23 @@ def create_app(registry: Registry | None = None) -> FastAPI:
             "_status_bar.html",
             {**base_context(request), "status": status, "models": status.models},
         )
+
+    @app.post("/api/title")
+    async def api_title(request: Request) -> JSONResponse:
+        """Save the greeting the home surface greets with.
+
+        JSON rather than an HTML fragment because the editor owns this
+        interaction: it swaps the heading for an input and back itself, and
+        all it needs from the server is what actually got stored. The rest of
+        the surface hands markup over to the server; here the swap is a
+        focus-management problem, and splitting that across a template and a
+        client script would be worse than either alone.
+        """
+        try:
+            title = save_title(await posted(request, "title"))
+        except OSError as exc:
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
+        return JSONResponse({"ok": True, "title": title})
 
     @app.post("/api/measure", response_class=HTMLResponse)
     def api_measure(request: Request) -> HTMLResponse:

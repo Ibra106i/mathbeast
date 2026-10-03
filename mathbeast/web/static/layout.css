@@ -246,4 +246,54 @@
 
 .stage-title__text {
   min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  font-weight: 400;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: text;
+  border-radius: var(--radius-sm);
+}
+
+.stage-title__text:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* The editor. Same metrics as the text it replaces -- the swap is a
+   width measurement away from being invisible, and a heading that jumps when
+   you click it reads as the page being broken rather than as an edit. */
+.stage-title__input {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  font: inherit;
+  font-weight: 400;
+  letter-spacing: inherit;
+  color: var(--text);
+  text-align: inherit;
+  caret-color: var(--accent);
+  border-radius: 0;
+}
+
+.stage-title__input:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+.stage-title__error {
+  margin: 10px 0 0;
+  font-size: var(--text-meta);
+  line-height: 1.4;
+  color: var(--down-text);
+  text-align: center;
 }

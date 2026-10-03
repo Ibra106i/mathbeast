@@ -90,3 +90,52 @@ def load_title(path: Path | None = None) -> str:
         return title[:MAX_TITLE]
 
     return title
+
+
+def save_title(value: str, path: Path | None = None) -> str:
+    """Write the greeting and return it as the page will show it.
+
+    The return value is not the argument. What lands on disk is stripped and
+    clamped, and what the page will render falls back to the placeholder when
+    the result is empty -- so the caller gets the effective string rather than
+    echoing back something that was never stored.
+
+    Existing keys survive. A file holding other settings must not lose them
+    because somebody renamed their greeting.
+    """
+    target = path or CONFIG_FILE
+
+    existing: dict[str, object] = {}
+    try:
+        previous = json.loads(target.read_text(encoding="utf-8"))
+        if isinstance(previous, dict):
+            existing = previous
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        # Starting from nothing is right for a new file. For a file that is
+        # there but broken, this write is the repair -- the old contents
+        # were unusable either way, so there is nothing to preserve and
+        # nothing to warn about on every save.
+        pass
+
+    title = (value or "").strip()[:MAX_TITLE]
+
+    if title:
+        existing["title"] = title
+    else:
+        # Cleared means unset, not "the empty string is my greeting". Leaving
+        # `title: ""` behind would make the file disagree with the page to
+        # anyone who opened it in an editor.
+        existing.pop("title", None)
+
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            json.dumps(existing, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+    except OSError as exc:
+        # Surfaced to the route, which turns it into a message the editor can
+        # show. Swallowing it would look like a save that silently did nothing.
+        log.error("could not write %s (%s)", target, exc)
+        raise
+
+    return load_title(target)

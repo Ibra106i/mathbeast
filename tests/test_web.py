@@ -86,6 +86,107 @@ def test_the_greeting_comes_from_the_user_config(client, monkeypatch, tmp_path) 
     assert "Coffee and Claude time?" not in body
 
 
+def test_the_editor_is_told_the_ceiling_rather_than_reimplementing_it(client) -> None:
+    """The field must never reject text the file would have accepted.
+
+    Duplicating the number in JavaScript is how the two drift apart and a
+    greeting silently stops saving.
+    """
+    from mathbeast.web.config import MAX_TITLE
+
+    assert 'data-max-title="%d"' % MAX_TITLE in client.get("/").text
+
+
+# --- saving the greeting ----------------------------------------------------
+
+
+@pytest.fixture()
+def user_config(monkeypatch, tmp_path):
+    """Point the config at a temp file so a test cannot touch a real home dir."""
+    from mathbeast.web import config
+
+    target = tmp_path / ".mathbeast" / "config.json"
+    monkeypatch.setattr(config, "CONFIG_FILE", target)
+    return target
+
+
+def test_the_greeting_saves_from_a_form_body(client, user_config) -> None:
+    response = client.post("/api/title", data={"title": "Three seconds to spare"})
+    assert response.status_code == 200
+    assert response.json() == {"ok": True, "title": "Three seconds to spare"}
+    assert "Three seconds to spare" in client.get("/").text
+
+
+def test_a_cleared_greeting_writes_nothing_and_shows_the_default(
+    client, user_config
+) -> None:
+    """An empty string is not a greeting someone chose; it is an unset field.
+
+    The file must not end up holding `title: ""` while the page shows the
+    placeholder -- anyone opening it would wonder which one was wrong.
+    """
+    client.post("/api/title", data={"title": "  "})
+    assert user_config.exists()
+    assert "title" not in user_config.read_text(encoding="utf-8")
+
+    assert "Coffee and Claude time?" in client.get("/").text
+
+
+def test_saving_the_greeting_keeps_the_rest_of_the_file(client, user_config) -> None:
+    """A file holding other settings must not lose them because somebody
+    renamed a caption."""
+    import json
+
+    user_config.parent.mkdir(parents=True, exist_ok=True)
+    user_config.write_text('{"theme": "dark"}', encoding="utf-8")
+
+    client.post("/api/title", data={"title": "Still here"})
+
+    assert json.loads(user_config.read_text(encoding="utf-8")) == {
+        "theme": "dark",
+        "title": "Still here",
+    }
+
+
+def test_an_overlong_greeting_is_clamped_and_the_response_says_so(
+    client, user_config
+) -> None:
+    """What comes back is what will render, not what was sent."""
+    from mathbeast.web.config import MAX_TITLE
+
+    response = client.post("/api/title", data={"title": "z" * 400})
+    assert response.json()["title"] == "z" * MAX_TITLE
+
+
+def test_an_unwritable_config_reports_a_failure_rather_than_a_silent_save(
+    client, monkeypatch, tmp_path
+) -> None:
+    """A save that cannot land must not answer 200 -- the editor would wipe
+    the user's text and then tell them it worked."""
+    from mathbeast.web import config
+
+    monkeypatch.setattr(config, "CONFIG_FILE", tmp_path / "config.json")
+
+    def refuse(*args, **kwargs):
+        raise OSError("read-only filesystem")
+
+    monkeypatch.setattr(config.Path, "mkdir", refuse)
+    monkeypatch.setattr(config.Path, "write_text", refuse)
+
+    response = client.post("/api/title", data={"title": "anything"})
+    assert response.status_code == 500
+    assert response.json()["ok"] is False
+
+
+def test_a_round_trip_shows_exactly_what_the_file_holds(client, user_config) -> None:
+    """Save then read: what the page shows is what the file holds."""
+    client.post("/api/title", data={"title": "  Pinned to the board  "})
+    body = client.get("/").text
+    assert "Pinned to the board" in body
+    assert "  Pinned to the board  " not in body
+    assert '"title": "Pinned to the board"' in user_config.read_text(encoding="utf-8")
+
+
 @pytest.mark.parametrize("path", ["/", "/inspector"])
 def test_the_document_starts_with_the_doctype(client, path) -> None:
     """Whitespace ahead of the doctype is stripped, not merely tolerated.
@@ -164,6 +265,36 @@ def test_selecting_a_model_updates_the_status_bar(client) -> None:
     response = client.post("/api/model", params={"model": "fake-model"})
     assert response.status_code == 200
     assert "fake-model" in response.text
+
+
+def test_the_model_picker_its_body_actually_reaches_the_registry() -> None:
+    """The picker posts a form. That is the shape the browser sends.
+
+    The endpoint used to declare `model: str = ""`, which FastAPI reads from
+    the query string, so every real click fell through to `if model:` and did
+    nothing -- while the test above passed, because it sent `params=`. A test
+    that exercises the transport the feature actually uses is the only kind
+    that would have caught it.
+    """
+    registry = Registry(backend=FakeBackend(), model="fake-model")
+    with fastapi_testclient.TestClient(create_app(registry)) as client:
+        response = client.post("/api/model", data={"model": "other-model"})
+
+    assert response.status_code == 200
+    assert registry.model == "other-model"
+
+
+def test_the_query_string_still_selects_a_model() -> None:
+    """The old signature accepted a query parameter, so it stays accepted.
+
+    Fixing the form path must not quietly break whoever wrote against the
+    declaration that was there before.
+    """
+    registry = Registry(backend=FakeBackend(), model="fake-model")
+    with fastapi_testclient.TestClient(create_app(registry)) as client:
+        client.post("/api/model", params={"model": "third-model"})
+
+    assert registry.model == "third-model"
 
 
 def test_measure_returns_a_real_throughput_number(client) -> None:

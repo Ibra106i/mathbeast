@@ -7,7 +7,7 @@ import logging
 
 import pytest
 
-from mathbeast.web.config import DEFAULT_TITLE, MAX_TITLE, load_title
+from mathbeast.web.config import DEFAULT_TITLE, MAX_TITLE, load_title, save_title
 
 
 def _write(tmp_path, payload):
@@ -108,3 +108,65 @@ def test_the_ceiling_allows_a_realistic_greeting(tmp_path) -> None:
     """The clamp must not bite the length it exists to permit."""
     target = _write_json(tmp_path, {"title": "a" * MAX_TITLE})
     assert load_title(target) == "a" * MAX_TITLE
+
+
+# --- writing ----------------------------------------------------------------
+
+
+def test_a_save_creates_the_directory_it_needs(tmp_path) -> None:
+    """A fresh machine has no ~/.mathbeast, and the first save is what makes
+    it. Failing here would mean editing the greeting never works once."""
+    target = tmp_path / "nested" / "config.json"
+    assert save_title("Written fresh", target) == "Written fresh"
+    assert load_title(target) == "Written fresh"
+
+
+def test_the_value_returned_is_the_one_that_will_render(tmp_path) -> None:
+    """Stripped on the way in, so the caller must not echo its argument."""
+    target = tmp_path / "config.json"
+    assert save_title("   spaced out   ", target) == "spaced out"
+    assert load_title(target) == "spaced out"
+
+
+def test_saving_clears_the_key_instead_of_storing_an_empty_string(tmp_path) -> None:
+    """`title: ""` in the file beside a placeholder on the page is a
+    disagreement the reader has no way to resolve."""
+    target = tmp_path / "config.json"
+    save_title("A greeting", target)
+    save_title("", target)
+    assert "title" not in target.read_text(encoding="utf-8")
+    assert load_title(target) == DEFAULT_TITLE
+
+
+def test_a_save_that_clears_leaves_valid_json(tmp_path) -> None:
+    """Wiping the last key still writes an object, not an empty file that
+    the next load has to special-case."""
+    target = tmp_path / "config.json"
+    save_title("gone", target)
+    save_title("", target)
+    assert json.loads(target.read_text(encoding="utf-8")) == {}
+
+
+def test_saving_does_not_eat_settings_it_does_not_know_about(tmp_path) -> None:
+    target = tmp_path / "config.json"
+    target.write_text('{"theme": "dark", "title": "old"}', encoding="utf-8")
+
+    save_title("new", target)
+
+    assert json.loads(target.read_text(encoding="utf-8"))["theme"] == "dark"
+
+
+def test_saving_repairs_a_corrupt_file_rather_than_raising(tmp_path) -> None:
+    """The old contents were unusable either way; refusing to write because
+    they were broken would leave the file unrecoverable."""
+    target = _write(tmp_path, "not json at all")
+    assert save_title("recovered", target) == "recovered"
+    assert load_title(target) == "recovered"
+
+
+def test_a_failed_write_says_so(tmp_path) -> None:
+    """Swallowing this would look exactly like a save that worked."""
+    target = tmp_path / "config.json"
+    target.mkdir()  # a directory where the file should be
+    with pytest.raises(OSError):
+        save_title("anything", target)
