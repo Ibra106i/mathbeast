@@ -1,24 +1,7 @@
-/* MathBeast -- inspector.
+﻿/* MathBeast -- inspector.
    Dark by default: this sits open next to a terminal and a model server.
    Numbers are monospace and tabular so they do not jitter as they poll. */
 
-:root {
-  --bg: #0f1115;
-  --bg-raised: #171a21;
-  --bg-inset: #1d212a;
-  --line: #262b36;
-  --line-soft: #1f2430;
-  --text: #e6e9ef;
-  --text-dim: #98a0b0;
-  --text-faint: #6b7488;
-  --accent: #7aa2f7;
-  --good: #7fd67f;
-  --warn: #e0af68;
-  --down: #f2777a;
-  --radius: 10px;
-  --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
 
 * { box-sizing: border-box; }
 
@@ -27,7 +10,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--sans);
+  font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -54,8 +37,8 @@ html, body {
   gap: 18px;
   padding: 0 20px;
   height: 54px;
-  background: var(--bg-raised);
-  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
 .brand {
@@ -89,9 +72,9 @@ html, body {
   border: 1px solid transparent;
 }
 
-.pill-local { background: rgba(122,162,247,.14); color: var(--accent); border-color: rgba(122,162,247,.3); }
-.pill-cpu   { background: rgba(224,175,104,.13); color: var(--warn);   border-color: rgba(224,175,104,.28); }
-.pill-down  { background: rgba(242,119,122,.14); color: var(--down);  border-color: rgba(242,119,122,.32); }
+.pill-local { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-line); }
+.pill-cpu   { background: var(--warn-soft); color: var(--warn);   border-color: var(--warn-line); }
+.pill-down  { background: var(--down-soft); color: var(--down);  border-color: var(--down-line); }
 
 .muted { color: var(--text-dim); }
 .inline { display: inline-flex; }
@@ -127,8 +110,8 @@ html, body {
   text-transform: capitalize;
 }
 
-.navitem:hover { background: var(--bg-raised); color: var(--text); }
-.navitem.is-current { background: var(--bg-inset); color: var(--text); font-weight: 600; }
+.navitem:hover { background: var(--surface); color: var(--text); }
+.navitem.is-current { background: var(--surface-raised); color: var(--text); font-weight: 600; }
 .navitem.is-planned { color: var(--text-faint); }
 
 .badge {
@@ -136,7 +119,7 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-faint);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 5px;
 }
@@ -156,8 +139,8 @@ h2 { font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 0.06
 /* ---------- panels ---------- */
 
 .panel {
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px 20px;
   margin-bottom: 18px;
@@ -172,8 +155,8 @@ h2 { font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 0.06
 }
 
 .notice {
-  background: var(--bg-inset);
-  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: 6px;
   padding: 12px 14px;
@@ -181,7 +164,7 @@ h2 { font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 0.06
   margin: 0 0 14px;
 }
 
-.notice-down { border-left-color: var(--down); color: #f6c9ca; }
+.notice-down { border-left-color: var(--down); color: var(--down-text); }
 
 /* ---------- metrics ---------- */
 
@@ -195,7 +178,7 @@ h2 { font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 0.06
 .metric { display: flex; flex-direction: column; gap: 2px; }
 
 .metric-value {
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   font-size: 24px;
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
@@ -222,18 +205,18 @@ h2 { font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 0.06
   letter-spacing: 0.06em;
   color: var(--text-faint);
   padding: 6px 10px 8px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--border);
 }
-.table td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line-soft); }
+.table td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--border-soft); }
 .table tr:last-child td { border-bottom: 0; }
-.table .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; padding-right: 0; }
-.table .is-selected { background: rgba(122,162,247,.07); }
+.table .num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; padding-right: 0; }
+.table .is-selected { background: var(--accent-faint); }
 
 code {
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   font-size: 12.5px;
-  background: var(--bg-inset);
-  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 5px;
 }
@@ -245,8 +228,8 @@ code {
   font-size: 13px;
   padding: 7px 14px;
   border-radius: 7px;
-  border: 1px solid var(--line);
-  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
   color: var(--text);
   cursor: pointer;
 }
@@ -259,8 +242,8 @@ select {
   font-size: 13px;
   padding: 5px 9px;
   border-radius: 7px;
-  border: 1px solid var(--line);
-  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
   color: var(--text);
   max-width: 320px;
 }

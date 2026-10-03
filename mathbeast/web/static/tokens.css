@@ -20,8 +20,10 @@
   --border: #33333a;
   --border-soft: #26262c;
 
-  /* --- ink ---------------------------------------------------------------- */
-
+  /* Colours are stored as bare rgb triples so tints can be derived from them
+   * with slash-alpha rather than repeating the literal in every stylesheet.
+   * One source per colour, and no colour-mix(), which would demand a newer
+   * browser than this app otherwise requires. */
   --text: #e9e7e4;
   --text-dim: #8a8a90;
   --text-faint: #6b6b72;
@@ -30,12 +32,23 @@
 
   /* The asterisk. Salmon rather than a saturated orange: at this size a hotter
    * hue reads as an error state, which would be wrong. */
-  --accent: #eba58f;
-  --accent-dim: rgba(235, 165, 143, 0.14);
+  --accent-rgb: 235 165 143;
+  --accent: rgb(var(--accent-rgb));
+  --accent-soft: rgb(var(--accent-rgb) / 0.14);
+  --accent-line: rgb(var(--accent-rgb) / 0.30);
+  --accent-faint: rgb(var(--accent-rgb) / 0.07);
 
-  --good: #7fd67f;
-  --warn: #e0af68;
-  --down: #f2777a;
+  --good-rgb: 127 214 127;
+  --good: rgb(var(--good-rgb));
+  --warn-rgb: 224 175 104;
+  --warn: rgb(var(--warn-rgb));
+  --warn-soft: rgb(var(--warn-rgb) / 0.13);
+  --warn-line: rgb(var(--warn-rgb) / 0.28);
+  --down-rgb: 242 119 122;
+  --down: rgb(var(--down-rgb));
+  --down-soft: rgb(var(--down-rgb) / 0.14);
+  --down-line: rgb(var(--down-rgb) / 0.32);
+  --down-text: #f6c9ca;
 
   /* --- type --------------------------------------------------------------- */
 
@@ -62,6 +75,8 @@
   --composer-pad-x: 15px;
 
   --title-radius: 8px;
+  --radius: 10px;
+  --radius-sm: 6px;
 
   /* --- motion ------------------------------------------------------------- */
 
