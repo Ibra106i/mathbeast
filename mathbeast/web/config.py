@@ -22,8 +22,8 @@ DEFAULT_TITLE = "Coffee and Claude time?"
 
 #: Ceiling on what the greeting may become, in characters.
 #:
-#: Not arbitrary: at 34px inside a 615px column, 80 characters already runs to
-#: three lines and pushes the composer off centre. Longer than that and the
+#: Not arbitrary: at 40.5px inside a 597px column, 80 characters already runs
+#: to three lines and pushes the composer off centre. Longer than that and the
 #: stage stops looking like the thing it was modelled on. The editor enforces
 #: the same number, so the file and the page can never disagree.
 MAX_TITLE = 80

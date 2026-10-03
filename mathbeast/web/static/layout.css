@@ -237,7 +237,9 @@
   font-size: var(--text-title);
   font-weight: 400;
   line-height: 1.15;
-  letter-spacing: -0.01em;
+  /* -0.02em is measured, not taste: at -0.01em this face draws the greeting to
+     393.7px against the capture's 384, at -0.02em to 384.4. */
+  letter-spacing: -0.02em;
   color: var(--text);
   text-align: center;
   /* The reference has no rule under the heading, so selection shows as a

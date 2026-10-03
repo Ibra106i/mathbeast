@@ -10,14 +10,12 @@ page, so per-pixel equality is a state the render cannot reach and the
 harness does not ask for it. It measures the same landmarks in both images
 with one shared function -- both ends of the chrome, the composer box, the
 title's ink and the mark's -- prints every delta, and asserts the position
-of every group and the size of every box. What it does not assert is
-written down instead, next to the delta that explains why: the capture's
-fourth left-hand glyph would toggle the drawer our menu already toggles,
-its right-hand mascot and window controls need a shell this app does not
-have, and the title's width and where its ink rests vertically both follow
-the typeface, which is P19's question.
-Every group keeps the capture's margins; the contents are the deliberate
-difference.
+of every group and the size of every box, the title and its mark edge by
+edge. What it does not assert is written down instead, next to the delta
+that explains why: the capture's fourth left-hand glyph would toggle the
+drawer our menu already toggles, and its right-hand mascot and window
+controls need a shell this app does not have. Every group keeps the
+capture's margins; the contents are the deliberate difference.
 
 Run with -s to watch the report; on failure the report is in the output.
 """
@@ -210,25 +208,6 @@ def test_render_matches_the_capture(render, capture) -> None:
         "written down: mascot and window controls need a shell; the dot "
         "holds the margin"
     )
-    report.append(
-        f"{'title width':13} {cap['title'][3] - cap['title'][2] + 1:<24} "
-        f"{got['title'][3] - got['title'][2] + 1:<24} "
-        "written down: which typeface draws it is P19's question"
-    )
-    report.append(
-        f"{'title ink y':13} "
-        f"y {cap['title'][0]}..{cap['title'][1]:<17} "
-        f"y {got['title'][0]}..{got['title'][1]:<17} "
-        "written down: the render's ink rests 2px lower because the line "
-        "box's ascent belongs to the typeface, which is P19's question"
-    )
-    report.append(
-        f"{'mark left/right':13} "
-        f"x {cap['mark'][2]}..{cap['mark'][3]:<20} "
-        f"x {got['mark'][2]}..{got['mark'][3]:<20} "
-        "written down: the block is centred on the title's width, so it "
-        "follows P19"
-    )
     print("\n".join(report))
 
     # (what is asserted, the two numbers, the tolerance in px)
@@ -247,9 +226,16 @@ def test_render_matches_the_capture(render, capture) -> None:
         ("composer bottom", cap["composer"][1], got["composer"][1], 4),
         ("composer left", cap["composer"][2], got["composer"][2], 4),
         ("composer right", cap["composer"][3], got["composer"][3], 4),
+        # the title's box and the mark's are asserted edge by edge now that
+        # the face is measured rather than inherited: they land within 3px
+        # (title left 643 vs 640, mark right 629 vs 631)
+        ("title left edge", cap["title"][2], got["title"][2], 4),
+        ("title right edge", cap["title"][3], got["title"][3], 4),
         ("title ink height",
          cap["title"][1] - cap["title"][0] + 1,
-         got["title"][1] - got["title"][0] + 1, 3),
+         got["title"][1] - got["title"][0] + 1, 2),
+        ("mark left edge", cap["mark"][2], got["mark"][2], 4),
+        ("mark right edge", cap["mark"][3], got["mark"][3], 4),
         ("mark top", cap["mark"][0], got["mark"][0], 4),
         ("mark bottom", cap["mark"][1], got["mark"][1], 4),
         ("mark width",

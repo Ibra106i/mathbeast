@@ -1118,3 +1118,28 @@ def test_the_height_the_bar_grows_to_is_handed_to_the_sticky_nav() -> None:
     assert "syncTopbarHeight();" in js
     css = (_static() / "mathbeast.css").read_text(encoding="utf-8")
     assert "var(--topbar-h, 54px)" in css
+
+
+def test_the_title_face_is_the_measured_one_and_nothing_is_vendored() -> None:
+    """The serif leads with the face the capture's proportions chose.
+
+    Against the capture's x/cap 0.679, asc/cap 1.036 and width/cap 13.75,
+    Times New Roman measured closest of every face installed here, and it is
+    the one face that is present on Windows and macOS and metric-compatible on
+    Linux -- so the three platforms the suite runs on converge on the same
+    letterforms. Reordering that stack silently changes every platform's title
+    and nothing else would notice, which is what this pins.
+
+    The second half pins the other half of the decision: no face was vendored,
+    because the only redistributable family installed here is the worst fit
+    measured. A future phase that adds a webfont has to delete this test on
+    purpose rather than acquire one by accident.
+    """
+    serif = _tokens()["--font-serif"]
+    assert serif.split(",")[0].strip().strip('"') == "Times New Roman", serif
+    # the metric-compatible names that keep Linux on the same letterforms
+    assert "Liberation Serif" in serif and "Tinos" in serif
+    # nothing is fetched from a font CDN, and no font binary is vendored
+    assert "@font-face" not in (_static() / "layout.css").read_text(encoding="utf-8")
+    assert not list((_static() / "vendor").glob("*.woff*"))
+    assert not list(_static().glob("*.woff*"))

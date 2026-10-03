@@ -76,16 +76,37 @@
 
   /* --- type --------------------------------------------------------------- */
 
-  /* The title is a light transitional serif. No webfont in the reference
-   * screenshot, so this starts as a system stack; phase 19 decides whether to
-   * vendor a face. */
-  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino,
-                 "Book Antiqua", Georgia, serif;
+  /* The title is a narrow transitional serif, and the face is chosen by
+   * measuring the capture's proportions rather than by taste. Against the
+   * capture's x/cap 0.679, asc/cap 1.036 and width/cap 13.75, measured at
+   * 40px on this platform: Times New Roman misses by 1.8%, 0.1% and 4.2%
+   * and its four word widths land 0.012 from the capture's; Palatino Linotype
+   * is the next at 10.0 summed against 7.4, Georgia 14.4, Cambria 13.4,
+   * Noto Serif 30.1.
+   *
+   * Two numbers are deliberately not in that list. The capture's title has an
+   * ink density of 0.415 where every candidate sits between 0.11 and 0.13 --
+   * the drawing was traced with roughly three times the ink of a 400-weight
+   * serif, which flattens stroke contrast as well as thickening it, so
+   * neither density nor contrast is a property of the face and neither may
+   * pick one.
+   *
+   * So: a system stack, not a vendored face. Nothing redistributable is
+   * installed here but Noto Serif, and that is the worst fit measured. The
+   * two metric-compatible names keep Linux on the same letterforms as
+   * Windows and macOS, which is what the capture's proportions demand; that
+   * substitution is fontconfig's, not this stylesheet's, and is not measured
+   * here. */
+  --font-serif: "Times New Roman", "Liberation Serif", Tinos, "Nimbus Roman",
+                 Times, serif;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo,
                Consolas, monospace;
 
-  --text-title: 40px;
+  /* 40.5px is what puts this face's ink on the capture's 29px, ascender to
+     baseline; 40px draws 28 and 41px draws 30. The width lands on 383 against
+     the capture's 384 once .stage-title's tracking is -0.02em. */
+  --text-title: 40.5px;
   --text-body: 15px;
   --text-meta: 12.5px;
   --text-micro: 11px;
