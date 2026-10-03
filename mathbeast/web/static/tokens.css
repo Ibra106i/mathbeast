@@ -1,0 +1,71 @@
+/* Design tokens.
+ *
+ * Values sampled by eye from a screenshot of the reference UI. That image was
+ * recompressed in transit, so treat every hex here as +/-5 RGB until it can be
+ * compared against the original file with the harness in phase 17.
+ *
+ * This file is the single source of colour and type. Component CSS may only
+ * reference these, never a literal hex, so a correction lands in one place.
+ */
+
+:root {
+  /* --- surface ------------------------------------------------------------ */
+
+  /* The page is not pure black; it carries a faint cool cast that reads as
+   * black against a white browser chrome but not against #000. */
+  --bg: #0b0b0d;
+  --surface: #262629;          /* the composer box */
+  --surface-raised: #35353a;   /* the "Chat" pill */
+  --surface-sunken: #08080a;   /* drawer, when it opens */
+  --border: #33333a;
+  --border-soft: #26262c;
+
+  /* --- ink ---------------------------------------------------------------- */
+
+  --text: #e9e7e4;
+  --text-dim: #8a8a90;
+  --text-faint: #6b6b72;
+
+  /* --- accent ------------------------------------------------------------- */
+
+  /* The asterisk. Salmon rather than a saturated orange: at this size a hotter
+   * hue reads as an error state, which would be wrong. */
+  --accent: #eba58f;
+  --accent-dim: rgba(235, 165, 143, 0.14);
+
+  --good: #7fd67f;
+  --warn: #e0af68;
+  --down: #f2777a;
+
+  /* --- type --------------------------------------------------------------- */
+
+  /* The title is a light transitional serif. No webfont in the reference
+   * screenshot, so this starts as a system stack; phase 19 decides whether to
+   * vendor a face. */
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino,
+                 "Book Antiqua", Georgia, serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo,
+               Consolas, monospace;
+
+  --text-title: 34px;
+  --text-body: 15px;
+  --text-meta: 12.5px;
+  --text-micro: 11px;
+
+  /* --- metrics ------------------------------------------------------------ */
+
+  /* The composer is 615 x 91 in a 1600px-wide capture, centred. */
+  --composer-width: 615px;
+  --composer-min-height: 91px;
+  --composer-radius: 14px;
+  --composer-pad-x: 15px;
+
+  --title-radius: 8px;
+
+  /* --- motion ------------------------------------------------------------- */
+
+  --fast: 120ms;
+  --med: 200ms;
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+}
