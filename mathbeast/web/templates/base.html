@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MathBeast{% endblock %}</title>
+  <link rel="stylesheet" href="/static/mathbeast.css">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/sse.js" defer></script>
+</head>
+<body hx-ext="sse,ignore:boost">
+  <header class="topbar">
+    <a class="brand" href="/inspector">MathBeast</a>
+    {% include "_status_bar.html" %}
+  </header>
+
+  <div class="shell">
+    <nav class="sidenav">
+      {% for view in views %}
+        <a class="navitem {% if current == view %}is-current{% endif %} {% if view not in implemented %}is-planned{% endif %}"
+           href="/{{ view }}">
+          <span class="navlabel">{{ view }}</span>
+          {% if view not in implemented %}<span class="badge">soon</span>{% endif %}
+        </a>
+      {% endfor %}
+    </nav>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="/static/mathbeast.js" defer></script>
+</body>
+</html>

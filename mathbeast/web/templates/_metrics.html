@@ -1,0 +1,42 @@
+{#
+  Throughput. Rendered only after a real generation has run -- these numbers come
+  from `eval_count / eval_duration` reported by the model server, not from
+  counting streamed chunks, which would overstate the speed.
+
+  An unmeasured value shows a dash. "0 tok/s" and "not measured" are different
+  facts and the distinction matters when deciding whether to pull a bigger model.
+#}
+<div class="metrics">
+  {% if metrics and metrics.is_measured %}
+    <div class="metric">
+      <span class="metric-value">{{ "%.1f"|format(metrics.tokens_per_second) }}</span>
+      <span class="metric-label">tok/s</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">{{ metrics.completion_tokens }}</span>
+      <span class="metric-label">tokens out</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">{{ metrics.prompt_tokens }}</span>
+      <span class="metric-label">tokens in</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">{{ "%.2f"|format(metrics.total_seconds) }}s</span>
+      <span class="metric-label">total</span>
+    </div>
+  {% elif metrics and metrics.load_seconds > 0 %}
+    <div class="metric">
+      <span class="metric-value">{{ "%.1f"|format(metrics.prompt_tokens_per_second) }}</span>
+      <span class="metric-label">tok/s prompt</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">{{ "%.0f"|format(metrics.load_seconds * 1000) }}ms</span>
+      <span class="metric-label">load</span>
+    </div>
+  {% else %}
+    <div class="metric metric-empty">
+      <span class="metric-value">&#8212;</span>
+      <span class="metric-label">not measured</span>
+    </div>
+  {% endif %}
+</div>

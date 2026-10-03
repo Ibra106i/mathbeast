@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}MathBeast &middot; {{ view|capitalize }}{% endblock %}
+
+{% block content %}
+<h1>{{ view|capitalize }}</h1>
+<p class="notice">
+  Not built yet. This view is in the plan but has no implementation, so it is
+  saying so rather than pretending.
+</p>
+
+{% if view == 'ask' %}
+  <p class="lede">
+    Type any 0580 question. The engine parses it, shows you how it read the
+    question <em>before</em> solving it, then solves and verifies the answer by
+    substituting it back.
+  </p>
+  <p class="footnote">
+    That confirmation step is not ceremony. The engine can prove
+    <code>x = 6</code> satisfies <code>3x + 7 = 25</code>; it cannot prove that
+    is what you meant.
+  </p>
+{% elif view == 'practice' %}
+  <p class="lede">
+    The 49 verified skills. Same surface as Ask, different promise: every
+    question here is generated from code and correct by construction.
+  </p>
+{% elif view == 'coverage' %}
+  <p class="lede">
+    What the 0580 pack covers, by syllabus code, including the sections with
+    nothing in them yet.
+  </p>
+{% elif view == 'eval' %}
+  <p class="lede">
+    Runs the parse benchmark in the browser, so the number is something you
+    watch rather than something you take on trust.
+  </p>
+{% endif %}
+{% endblock %}

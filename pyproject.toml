@@ -17,6 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.4"]
 narrate = ["requests>=2.31"]
+web = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "jinja2>=3.1"]
 
 [project.scripts]
 mathbeast = "mathbeast.cli:main"
@@ -25,7 +26,13 @@ mathbeast = "mathbeast.cli:main"
 include = ["mathbeast*"]
 
 [tool.setuptools.package-data]
-mathbeast = ["skills/**/*.yaml"]
+mathbeast = [
+    "skills/**/*.yaml",
+    "web/templates/*.html",
+    "web/static/*.css",
+    "web/static/*.js",
+    "web/static/vendor/*.js",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

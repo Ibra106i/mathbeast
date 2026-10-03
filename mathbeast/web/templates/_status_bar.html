@@ -1,0 +1,33 @@
+{#
+  The status bar. Polled every few seconds, and the whole thing is swapped as
+  one fragment so the server owns its own markup. An unreachable backend has to
+  look different from a reachable one, so it does.
+#}
+<div class="statusbar" id="statusbar"
+     hx-get="/api/status-fragment"
+     hx-trigger="every 4s"
+     hx-swap="outerHTML">
+
+  {% if not status.available %}
+    <span class="pill pill-down">{{ backend_name }} unreachable</span>
+    <span class="muted">{{ status.detail }}</span>
+  {% else %}
+    {% if models %}
+      <form class="inline" hx-post="/api/model" hx-target="#statusbar" hx-swap="outerHTML">
+        <label class="sr" for="model-picker">Model</label>
+        <select id="model-picker" name="model" onchange="this.form.requestSubmit()">
+          {% for m in models %}
+            <option value="{{ m.name }}" {% if m.name == model %}selected{% endif %}>
+              {{ m.name }}{% if m.parameter_size %} ({{ m.parameter_size }}){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    {% else %}
+      <span class="muted">no models installed</span>
+    {% endif %}
+
+    <span class="pill pill-{{ backend_kind }}">{{ backend_name }}</span>
+    <span class="muted">{{ status.detail }}</span>
+  {% endif %}
+</div>

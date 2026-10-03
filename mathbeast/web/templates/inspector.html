@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}MathBeast &middot; Inspector{% endblock %}
+
+{% block content %}
+<h1>Model inspector</h1>
+<p class="lede">
+  Everything below is reported by the model server itself. Nothing is estimated.
+</p>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Throughput</h2>
+    <button class="btn"
+            hx-post="/api/measure"
+            hx-target="#metrics"
+            hx-swap="outerHTML"
+            {% if not model or not status.available %}disabled{% endif %}>
+      {% if not status.available %}
+        backend unavailable
+      {% elif not model %}
+        select a model first
+      {% else %}
+        measure tok/s
+      {% endif %}
+    </button>
+  </div>
+
+  <div id="metrics">
+    {% include "_metrics.html" %}
+  </div>
+
+  <p class="footnote">
+    tok/s is <code>eval_count / eval_duration</code> as reported by the server.
+    Not a chunk rate &mdash; a streamed chunk can hold several tokens, so counting
+    chunks flatters the model.
+  </p>
+</section>
+
+<section class="panel">
+  <h2>Installed models</h2>
+  {% if not status.available %}
+    <p class="notice notice-down">
+      {{ backend_name }} is not answering. {{ status.detail }}
+    </p>
+  {% elif not models %}
+    <p class="notice">
+      The server is up but has no models. Pull one, for example
+      <code>ollama pull qwen2.5:3b</code>.
+    </p>
+  {% else %}
+    <table class="table">
+      <thead>
+        <tr><th>Model</th><th>Parameters</th><th>Quantisation</th><th class="num">Size</th></tr>
+      </thead>
+      <tbody>
+        {% for m in models %}
+          <tr {% if m.name == model %}class="is-selected"{% endif %}>
+            <td><code>{{ m.name }}</code></td>
+            <td>{{ m.parameter_size or "&#8212;" }}</td>
+            <td>{{ m.quantization or "&#8212;" }}</td>
+            <td class="num">{{ "%.1f"|format(m.size_bytes / 1e9) }} GB</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Resident in memory</h2>
+  {% if not running %}
+    <p class="muted">Nothing loaded. A model is loaded on its first request.</p>
+  {% else %}
+    <table class="table">
+      <thead>
+        <tr><th>Model</th><th>Placement</th><th class="num">Size</th><th class="num">VRAM</th></tr>
+      </thead>
+      <tbody>
+        {% for r in running %}
+          <tr>
+            <td><code>{{ r.name }}</code></td>
+            <td>
+              {% if r.on_gpu %}<span class="pill pill-local">GPU</span>
+              {% else %}<span class="pill pill-cpu">CPU / RAM</span>{% endif %}
+            </td>
+            <td class="num">{{ "%.1f"|format(r.size_bytes / 1e9) }} GB</td>
+            <td class="num">
+              {% if r.on_gpu %}{{ "%.1f"|format(r.size_vram_bytes / 1e9) }} GB
+              {% else %}&#8212;{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="footnote">
+      Ollama reports 0 VRAM when a model is loaded entirely in system RAM, which
+      is usually the difference between usable and not.
+    </p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -10,7 +10,10 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import socket
 import sys
+import threading
+import webbrowser
 from pathlib import Path
 
 from mathbeast.forms import check
@@ -243,7 +246,74 @@ def build_parser() -> argparse.ArgumentParser:
     p_bench.add_argument("--model", default="qwen2.5:3b")
     p_bench.set_defaults(func=cmd_bench)
 
+    p_serve = sub.add_parser("serve", help="launch the web UI")
+    p_serve.add_argument("--port", type=int, default=8000)
+    p_serve.add_argument("--model", default="")
+    p_serve.add_argument("--ollama-url", default="http://localhost:11434")
+    p_serve.add_argument(
+        "--no-browser", action="store_true", help="do not open a browser"
+    )
+    p_serve.set_defaults(func=cmd_serve)
+
     return parser
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    """Launch the web UI. The only user-facing surface.
+
+    This is a launcher, not an interface: it finds a port, starts the server,
+    and opens a browser. Everything else the user does happens in the browser.
+    """
+    try:
+        import uvicorn
+    except ImportError:
+        raise SystemExit(
+            "the web UI needs extra dependencies.\n"
+            "    pip install mathbeast[web]"
+        ) from None
+
+    from mathbeast.models import build_registry
+    from mathbeast.web import create_app
+
+    registry = build_registry(url=args.ollama_url)
+    if args.model:
+        registry.set_model(args.model)
+
+    status = registry.backend.status()
+    if not status.available:
+        print(f"!  {status.detail}")
+        print("   The UI will start, but there is nothing to talk to yet.")
+    elif not status.models:
+        print("!  ollama is up with no models installed. Try: ollama pull qwen2.5:3b")
+    else:
+        registry.set_model(args.model or status.models[0].name)
+        print(f"   {status.detail}, {len(status.models)} model(s) available")
+
+    port = _free_port(args.port)
+    url = f"http://127.0.0.1:{port}"
+
+    if not args.no_browser:
+        threading.Timer(1.2, lambda: webbrowser.open(url)).start()
+
+    print(f"\n   MathBeast -> {url}\n   Ctrl+C to stop.\n")
+    uvicorn.run(create_app(registry), host="127.0.0.1", port=port, log_level="warning")
+    return 0
+
+
+def _free_port(preferred: int) -> int:
+    """Use the requested port, or the next free one.
+
+    A second copy of the app should not die because the first took 8000.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        if probe.connect_ex(("127.0.0.1", preferred)) != 0:
+            return preferred
+    for candidate in range(preferred + 1, preferred + 25):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            if probe.connect_ex(("127.0.0.1", candidate)) != 0:
+                print(f"   port {preferred} is busy, using {candidate}")
+                return candidate
+    raise SystemExit(f"no free port between {preferred} and {preferred + 25}")
 
 
 def main(argv: list[str] | None = None) -> int:
