@@ -175,7 +175,9 @@ h2 { font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 0.06
   border-left: 3px solid var(--accent);
   border-radius: 6px;
   padding: 12px 14px;
-  color: var(--text-dim);
+  /* Full-strength text: --text-dim on this raised field is 3.70:1 and fails
+     AA, --text is 8.53:1. */
+  color: var(--text);
   margin: 0 0 14px;
 }
 
@@ -252,11 +254,14 @@ code {
      arriving and runs a shade longer. */
   transition:
     border-color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease),
     color var(--fast) var(--ease),
     opacity var(--med) var(--ease);
 }
 
-.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+/* Tint the field rather than the glyphs: --accent on --surface-raised is
+   3.81:1 and fails AA, --text on --accent-soft over --surface is 10.98:1. */
+.btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
 .btn:focus-visible:not(:disabled) { outline: 2px solid var(--accent); outline-offset: 1px; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 

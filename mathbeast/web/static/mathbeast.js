@@ -44,10 +44,19 @@
     var closers = Array.prototype.slice.call(document.querySelectorAll("[data-drawer-close]"));
     var scrim = document.querySelector(".scrim");
     var lastFocus = null;
+    // What the panel can hold. Disabled controls are left out so the tab order
+    // never lands on something that would swallow the key press and do nothing.
+    var FOCUSABLE = "a[href], button:not([disabled]), input, select, textarea";
 
     function setOpen(open) {
       if (open === !drawer.hidden) return;
-      if (open) lastFocus = document.activeElement;
+      if (open) {
+        // Where Tab was before the panel opened. A click does not move focus
+        // in every browser, so falling back to the toggle itself beats handing
+        // close back to a document with nothing to give it to.
+        var from = document.activeElement;
+        lastFocus = from && from !== document.body ? from : (toggles[0] || null);
+      }
 
       drawer.hidden = !open;
       if (scrim) scrim.hidden = !open;
@@ -58,10 +67,13 @@
       // Without this the tab order carries on from the button that opened the
       // panel, one row behind the pointer, and Escape is the only way back.
       if (open) {
-        var first = drawer.querySelector("button, a, input, select");
+        var first = drawer.querySelector(FOCUSABLE);
         if (first) first.focus();
       } else if (lastFocus) {
-        lastFocus.focus();
+        // The node can be gone by the time it is needed -- a swap, a
+        // re-render -- and focusing a detached element silently does nothing,
+        // which reads as focus falling off the page entirely.
+        if (document.contains(lastFocus)) lastFocus.focus();
         lastFocus = null;
       }
     }
@@ -76,7 +88,32 @@
     });
 
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && !drawer.hidden) setOpen(false);
+      if (drawer.hidden) return;
+      if (event.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      // The scrim already makes the page behind unreachable to the pointer;
+      // this is the keyboard agreeing with it. Tab past the last control wraps
+      // to the first, so focus walks the panel and never walks out of it.
+      var items = drawer.querySelectorAll(FOCUSABLE);
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      var active = document.activeElement;
+
+      if (!drawer.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     });
   }
 
@@ -217,6 +254,33 @@
       elt.dataset.label = elt.textContent;
       elt.textContent = "measuring…";
       elt.disabled = true;
+    }
+  });
+
+  // The status bar polls itself every four seconds and is swapped as one
+  // fragment, so most polls bring back markup that matches what is already on
+  // the page. Rewriting it anyway moves nothing the eye can see, clears the
+  // live region for no announcement, and drops focus out of any control
+  // inside. The guard reads the incoming markup and stops the swap when it is
+  // identical.
+  //
+  // innerHTML rather than outerHTML or textContent, and deliberately: the
+  // element carries htmx-request for the length of this request, so outerHTML
+  // would differ on every poll including the no-op ones; and the model picker
+  // reports its choice as a `selected` attribute on an option, which changes
+  // the markup without changing a single character of text, so textContent
+  // would miss the one change worth announcing.
+  document.body.addEventListener("htmx:beforeSwap", function (event) {
+    var target = event.target;
+    var incoming = event.detail && event.detail.serverResponse;
+    if (!target || !target.classList || !target.classList.contains("statusbar")) return;
+    if (typeof incoming !== "string") return;
+
+    var probe = document.createElement("div");
+    probe.innerHTML = incoming;
+    var next = probe.firstElementChild;
+    if (next && next.innerHTML === target.innerHTML) {
+      event.detail.shouldSwap = false;
     }
   });
 

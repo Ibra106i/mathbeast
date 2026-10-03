@@ -2,6 +2,11 @@
   The status bar. Polled every few seconds, and the whole thing is swapped as
   one fragment so the server owns its own markup. An unreachable backend has to
   look different from a reachable one, so it does.
+
+  The live region lives on the page, not here: hx-swap="outerHTML" would
+  replace this element, and a role="status" wrapper written into the fragment
+  would nest a fresh one inside the last one on every poll. Each include site
+  wraps this file in a static <div class="statusbar-slot" role="status">.
 #}
 <div class="statusbar" id="statusbar"
      hx-get="/api/status-fragment"

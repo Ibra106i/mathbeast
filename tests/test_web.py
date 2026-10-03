@@ -561,3 +561,338 @@ def test_no_page_references_an_external_origin(client) -> None:
         body = client.get(path).text
         assert "http://" not in body.replace("http://www.w3.org", "")
         assert "https://" not in body.replace("https://www.w3.org", "")
+
+# --- keyboard and screen reader -----------------------------------------------
+
+
+_FOCUSABLE_TAG = re.compile(r"<(a|button|input|select|textarea)\b([^>]*)>", re.IGNORECASE)
+_FOCUS_ATTR = re.compile(r'([\w-]+)\s*=\s*"([^"]*)"')
+
+
+def _focus_stops(body: str) -> list[tuple[str, bool]]:
+    """Every control a key press can reach, in document order.
+
+    Returns the accessible name of each stop and whether it is disabled. The
+    name is taken the way a screen reader takes it -- aria-label first, then
+    id -- so this test and the reader cannot end up talking about two
+    different things. The drawer is cut out first: it starts `hidden`, so it
+    is not in the reading order until it is opened, and what happens inside
+    it is covered by the tests below.
+    """
+    body = re.sub(r'<aside class="drawer"[\s\S]*?</aside>', "", body)
+    stops: list[tuple[str, bool]] = []
+    for tag, raw in _FOCUSABLE_TAG.findall(body):
+        attrs = dict(_FOCUS_ATTR.findall(raw))
+        if tag.lower() == "a" and "href" not in attrs:
+            continue
+        name = attrs.get("aria-label") or attrs.get("id") or attrs.get("href", "")
+        disabled = re.search(r"\sdisabled(\s|=|$)", raw) is not None
+        stops.append((name, disabled))
+    return stops
+
+
+def test_the_home_surface_tabs_in_reading_order(client) -> None:
+    """The bottom row arrived in one phase, and the tab order with it.
+
+    Read by a key press rather than by eye. The order is what the markup
+    happens to give you only while nothing has reordered it, so this pins
+    down the shape the screen reader walks: chrome first, then the heading
+    it edits, then the field, then the row of controls under it.
+    """
+    stops = _focus_stops(client.get("/").text)
+    assert stops == [
+        ("Menu", False),
+        ("Back", False),
+        ("Forward", False),
+        ("stage-title-text", False),
+        ("Ask a question", False),
+        ("New question", True),
+        ("Dictate", True),
+        ("Choose model", True),
+    ]
+
+
+def test_the_drawer_keeps_the_tab_key_inside_itself() -> None:
+    """The scrim already walls the pointer off from the page behind.
+
+    The tab key needs the same wall or focus walks straight through it: one
+    Tab leaves the panel, the next lands on the stage underneath, and nothing
+    on screen says which of the two surfaces is answering. Focus starts on
+    the first control when the panel opens, so the trap also has to pull
+    focus back in when something reaches for it from outside.
+    """
+    js = (_static() / "mathbeast.js").read_text(encoding="utf-8")
+    assert 'if (event.key !== "Tab") return;' in js
+    assert "drawer.querySelectorAll(FOCUSABLE)" in js
+    assert "!drawer.contains(active)" in js
+    assert "event.shiftKey && active === first" in js
+    assert "!event.shiftKey && active === last" in js
+
+
+def test_the_drawer_hands_focus_back_to_whatever_opened_it() -> None:
+    """Closing a panel by leaving focus nowhere is how a reader gets stranded.
+
+    Escape closes it with the keyboard, and the keyboard must not end up on
+    `<body>` with nothing to press. A click does not move focus in every
+    browser, so the toggle itself is the fallback when there is nothing
+    better to remember -- and a node that has been swapped out by then is
+    dropped rather than focused, since a detached element silently ignores
+    it and focus disappears entirely.
+    """
+    js = (_static() / "mathbeast.js").read_text(encoding="utf-8")
+    assert "lastFocus = from && from !== document.body" in js
+    assert "document.contains(lastFocus)" in js
+    assert "if (document.contains(lastFocus)) lastFocus.focus();" in js
+
+
+def test_the_status_bar_lives_in_a_region_the_fragment_does_not_own(client) -> None:
+    """A polite announcement needs a region that is already on the page.
+
+    `hx-swap="outerHTML"` replaces `#statusbar` on every poll, so a
+    `role="status"` written into the fragment would arrive inside the
+    previous one and nest a fresh region every four seconds. The region
+    belongs to the page that keeps it, and exactly one is rendered.
+    """
+    for path in ("/", "/inspector"):
+        body = client.get(path).text
+        assert body.count('class="statusbar-slot"') == 1, path
+        assert body.count('role="status"') == 1, path
+        assert re.search(
+            r'<div class="statusbar-slot" role="status">\s*<div class="statusbar" id="statusbar"',
+            body,
+        ), path
+
+    fragment = client.get("/api/status-fragment").text
+    assert "statusbar-slot" not in fragment
+    assert 'role="status"' not in fragment
+
+
+def test_a_poll_that_changes_nothing_does_not_rewrite_the_page() -> None:
+    """Four seconds is a short time to lose focus over nothing.
+
+    The bar polls itself whether or not the answer differs from what is on
+    screen, and swapping it anyway clears the live region for no
+    announcement and drops focus out of any control inside. The guard reads
+    the incoming markup and calls the swap off when it is identical --
+    innerHTML, because the element carries `htmx-request` for the length of
+    the request, so outerHTML would differ on every poll including the
+    no-op ones, and because the picker reports its choice with a `selected`
+    attribute, which changes the markup without changing a word of text.
+    """
+    js = (_static() / "mathbeast.js").read_text(encoding="utf-8")
+    assert 'document.body.addEventListener("htmx:beforeSwap"' in js
+    assert 'target.classList.contains("statusbar")' in js
+    assert "event.detail.serverResponse" in js
+    assert "next.innerHTML === target.innerHTML" in js
+    assert "event.detail.shouldSwap = false" in js
+
+
+# --- contrast ------------------------------------------------------------------
+
+
+#: Every rule that paints text or a field, paired with the colours it paints.
+#:
+#: Each entry pairs the text with the lightest backdrop that rule can actually
+#: render on, because lightest is the worst case for light text and a colour
+#: checked against something darker than it ever appears is not checked at
+#: all. Translucent colours are composited over the entry in BASE rather than
+#: assumed opaque.
+PAIRS: dict[str, tuple[str, str]] = {
+    ".stage": ("--text", "--bg"),
+    ".chromebtn": ("--text-dim", "--bg"),
+    ".chromebtn:hover": ("--text", "--wash-hover"),
+    ".chromebtn:active": ("--text-dim", "--wash-current"),
+    ".drawer-title": ("--text", "--surface-sunken"),
+    ".drawer-link": ("--text-dim", "--surface-sunken"),
+    ".drawer-link:hover": ("--text", "--wash-hover"),
+    ".drawer-link.is-current": ("--text", "--wash-current"),
+    ".drawer-link:active": ("--text-dim", "--wash-current"),
+    ".drawer-link.is-planned": ("--text-faint", "--surface-sunken"),
+    ".stage-title": ("--text", "--bg"),
+    ".stage-title__text": ("--text", "--bg"),
+    ".stage-title__input": ("--text", "--bg"),
+    ".stage-title__error": ("--down-text", "--bg"),
+    ".composer-input": ("--text", "--surface"),
+    ".composer-input::placeholder": ("--text-faint", "--surface"),
+    ".composer-icon": ("--text", "--surface"),
+    ".composer-icon--dim": ("--text-dim", "--surface"),
+    ".composer-mode": ("--text", "--surface-raised"),
+    ".composer-model, .composer-tier": ("--text-dim", "--surface"),
+    "html, body": ("--text", "--bg"),
+    ".brand": ("--text", "--bg"),
+    ".statusbar": ("--text-dim", "--bg"),
+    ".pill-local": ("--accent", "--accent-soft"),
+    ".pill-cpu": ("--warn", "--warn-soft"),
+    ".pill-down": ("--down", "--down-soft"),
+    ".muted": ("--text-dim", "--bg"),
+    ".navitem": ("--text-dim", "--surface-sunken"),
+    ".navitem:hover": ("--text", "--wash-hover"),
+    ".navitem:active": ("--text-dim", "--wash-current"),
+    ".navitem.is-current": ("--text", "--wash-current"),
+    ".navitem.is-planned": ("--text-faint", "--surface-sunken"),
+    ".badge": ("--text-faint", "--wash-current"),
+    "h2": ("--text-dim", "--bg"),
+    ".lede": ("--text-dim", "--bg"),
+    ".footnote": ("--text-faint", "--bg"),
+    ".notice": ("--text", "--surface-raised"),
+    ".notice-down": ("--down-text", "--surface-raised"),
+    ".metric-value": ("--text", "--surface"),
+    ".metric-empty .metric-value": ("--text-faint", "--surface"),
+    ".metric-label": ("--text-faint", "--surface"),
+    ".table th": ("--text-faint", "--surface"),
+    ".table .is-selected": ("--text", "--accent-faint"),
+    "code": ("--text", "--surface-raised"),
+    ".btn": ("--text", "--surface-raised"),
+    ".btn:hover:not(:disabled)": ("--text", "--accent-soft"),
+    "select": ("--text", "--surface-raised"),
+}
+
+#: Where a translucent colour sits: the lightest field each rule can land on.
+#: A wash over the sunken drawer is not the same colour as the same wash over
+#: the page, and the pair has to be judged on the lighter of the two.
+BASE: dict[str, str] = {
+    ".chromebtn:hover": "--bg",
+    ".chromebtn:active": "--bg",
+    ".drawer-link:hover": "--surface-sunken",
+    ".drawer-link.is-current": "--surface-sunken",
+    ".drawer-link:active": "--surface-sunken",
+    ".pill-local": "--bg",
+    ".pill-cpu": "--bg",
+    ".pill-down": "--bg",
+    ".navitem:hover": "--surface-sunken",
+    ".navitem:active": "--surface-sunken",
+    ".navitem.is-current": "--surface-sunken",
+    ".badge": "--surface-sunken",
+    ".table .is-selected": "--surface",
+    ".btn:hover:not(:disabled)": "--surface",
+}
+
+#: Rules that paint a field and carry no text of their own -- so there is no
+#: text colour to judge. WCAG 1.4.3 covers text; the 1.4.11 contrast of
+#: borders, icons-as-decoration and other non-text is out of scope here.
+NO_TEXT: set[str] = {
+    ".backenddot",
+    ".backenddot.is-down",
+    ".drawer",
+    ".scrim",
+    ".composer",
+    ".topbar",
+    ".sidenav",
+    ".panel",
+}
+
+_RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
+
+
+def _painted_rules() -> dict[str, dict[str, str]]:
+    """Every rule in either stylesheet that paints a colour, by selector.
+
+    Only the two sheets the page actually loads, and only rules declaring
+    `color` or `background` -- a rule that paints nothing has nothing to
+    judge, and a selector absent from this map is a rule the audit never
+    looked at.
+    """
+    painted: dict[str, dict[str, str]] = {}
+    for name in ("layout.css", "mathbeast.css"):
+        text = re.sub(r"/\*.*?\*/", "", (_static() / name).read_text(encoding="utf-8"), flags=re.S)
+        for raw, body in _RULE.findall(text):
+            selector = " ".join(raw.split())
+            decls: dict[str, str] = {}
+            for part in body.split(";"):
+                if ":" in part:
+                    prop, _, value = part.partition(":")
+                    decls[prop.strip()] = value.strip()
+            if "color" in decls or "background" in decls:
+                painted[selector] = decls
+    return painted
+
+
+def _tokens() -> dict[str, str]:
+    css = (_static() / "tokens.css").read_text(encoding="utf-8")
+    return dict(re.findall(r"(--[\w-]+)\s*:\s*([^;]+);", css))
+
+
+def _paint(name: str, base: str = "--bg") -> tuple[float, float, float]:
+    """The colour a token renders at, with translucency laid over `base`."""
+    raw = _tokens()[name].strip()
+    match = re.fullmatch(r"rgb\(var\((--[\w-]+)\)(?:\s*/\s*([\d.]+))?\)", raw)
+    if match:
+        triple = tuple(int(n) for n in _tokens()[match.group(1)].split())
+        alpha = float(match.group(2)) if match.group(2) else 1.0
+    else:
+        match = re.fullmatch(r"rgb\(\s*([\d ]+?)\s*(?:/\s*([\d.]+))?\)", raw)
+        if match:
+            triple = tuple(int(n) for n in match.group(1).split())
+            alpha = float(match.group(2)) if match.group(2) else 1.0
+        else:
+            assert raw.startswith("#"), f"{name} is not a colour: {raw!r}"
+            triple = tuple(int(raw[i : i + 2], 16) for i in (1, 3, 5))
+            alpha = 1.0
+    if alpha == 1.0:
+        return triple  # type: ignore[return-value]
+    under = _paint(base, base)
+    return tuple(alpha * c + (1 - alpha) * u for c, u in zip(triple, under))  # type: ignore[return-value]
+
+
+def _channel(value: float) -> float:
+    value /= 255.0
+    return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+
+
+def _luminance(rgb: tuple[float, float, float]) -> float:
+    r, g, b = (_channel(float(v)) for v in rgb)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _contrast(fg: tuple[float, float, float], bg: tuple[float, float, float]) -> float:
+    light, dark = sorted((_luminance(fg), _luminance(bg)), reverse=True)
+    return (light + 0.05) / (dark + 0.05)
+
+
+def test_the_contrast_table_covers_every_rule_that_paints_something() -> None:
+    """A table only defends the rules somebody remembered to write down.
+
+    So it is checked against the stylesheets rather than against itself: any
+    rule declaring a colour and missing from the table is a rule nobody has
+    looked at, and a table entry that paints nothing is a rule that has been
+    renamed or removed and the audit is now quietly checking a string.
+    """
+    painted = _painted_rules()
+    assert set(PAIRS) | NO_TEXT == set(painted), sorted(
+        (set(painted) - set(PAIRS) - NO_TEXT) | ((set(PAIRS) | NO_TEXT) - set(painted))
+    )
+    assert not set(PAIRS) & NO_TEXT
+
+
+def test_the_table_agrees_with_what_the_stylesheets_say() -> None:
+    """The ratio is only useful if the pair in the table is the pair on screen.
+
+    Both halves are read back out of the declarations so a colour changed in
+    one place and forgotten in the other fails here rather than in a browser
+    nobody has opened. Backgrounds declared as `none` or `transparent` fall
+    through to the field underneath and are judged on that instead.
+    """
+    painted = _painted_rules()
+    for selector, (fg, bg) in PAIRS.items():
+        decls = painted.get(selector, {})
+        colour = decls.get("color")
+        if colour and colour.startswith("var("):
+            assert colour == f"var({fg})", f"{selector}: {colour} vs table {fg}"
+        background = decls.get("background")
+        if background and background.startswith("var("):
+            assert background == f"var({bg})", f"{selector}: {background} vs table {bg}"
+
+
+@pytest.mark.parametrize("selector", sorted(PAIRS))
+def test_every_colour_pair_the_page_uses_reads_clearly(selector: str) -> None:
+    """WCAG 1.4.3 for text: 4.5 to 1 for anything smaller than large.
+
+    Measured rather than eyeballed, and measured on the lightest field the
+    rule can land on. Two of these sit within a few hundredths of the line
+    -- the placeholder, the metric label, the table header -- so the pairs
+    they sit next to are not interchangeable with them.
+    """
+    fg, bg = PAIRS[selector]
+    base = BASE.get(selector, "--bg")
+    ratio = _contrast(_paint(fg, base), _paint(bg, base))
+    assert ratio >= 4.5, f"{selector}: {fg} on {bg} over {base} is {ratio:.2f}:1"
