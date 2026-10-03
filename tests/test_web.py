@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
-from mathbeast.models import FakeBackend, Registry
+from mathbeast.models import BackendStatus, FakeBackend, Registry
 from mathbeast.web import create_app
 
 fastapi_testclient = pytest.importorskip("fastapi.testclient")
@@ -316,6 +317,77 @@ def test_unreachable_backend_reads_differently() -> None:
     assert "unreachable" in body.lower()
     assert "not answering" in body.lower() or "cannot reach" in body.lower()
     assert "backend unavailable" in body
+
+
+class EmptyBackend(FakeBackend):
+    """A server that answers and has nothing installed."""
+
+    def status(self) -> BackendStatus:
+        return replace(super().status(), models=[], running=[])
+
+
+def test_the_stage_says_the_backend_is_away_in_words(dead_client) -> None:
+    """The home surface used to report this with a dot you have to hover.
+
+    The dot carries the state in its title and the drawer's bar says it in
+    full, but the drawer stays shut by default -- while you were looking at
+    the composer the page said nothing at all. The colour arrives on the
+    pair class rather than in the template: the contrast table measures
+    `.notice-down`, the colour test measures the stylesheets, and an inline
+    style would sit outside both.
+    """
+    body = dead_client.get("/").text
+    assert 'class="notice notice-down"' in body
+    assert "fake is not answering. fake backend disabled" in body
+    assert "style=" not in body
+
+
+def test_the_stage_says_so_when_there_are_no_models() -> None:
+    """A server that answers and has nothing to run is its own state.
+
+    The inspector says it over the empty table; the stage has no table to
+    stand in for, and the composer's model readout simply vanishes when
+    there is no model -- a blank where a name belongs, not a sentence.
+    Down is the wrong class for it: nothing is broken, something is
+    missing.
+    """
+    registry = Registry(backend=EmptyBackend(), model="")
+    with fastapi_testclient.TestClient(create_app(registry)) as up:
+        body = up.get("/").text
+    assert 'class="notice"' in body
+    assert "notice-down" not in body
+    assert "The server is up but has no models." in body
+    assert "ollama pull qwen2.5:3b" in body
+
+
+def test_the_stage_is_quiet_when_the_backend_answers(client) -> None:
+    """The capture is a page with a working backend.
+
+    The pixel harness compares the home surface against the reference, and
+    a notice that rendered here would fail that comparison on words the
+    capture never had. The two broken states get a paragraph; the working
+    one gets nothing at all.
+    """
+    assert "notice" not in client.get("/").text
+
+
+def test_the_stage_and_the_inspector_say_the_same_thing(dead_client) -> None:
+    """Two templates, one sentence each, per state.
+
+    Duplication is fine; drift is not. "unreachable" in one place and "not
+    responding" in another is how the same failure starts reading as two
+    different problems, so both sentences are pinned at the rendered level
+    -- which is the only level a reader sees.
+    """
+    away = "fake is not answering. fake backend disabled"
+    for path in ("/", "/inspector"):
+        assert away in dead_client.get(path).text
+
+    registry = Registry(backend=EmptyBackend(), model="")
+    with fastapi_testclient.TestClient(create_app(registry)) as up:
+        bare = "The server is up but has no models."
+        for path in ("/", "/inspector"):
+            assert bare in up.get(path).text
 
 
 def test_planned_views_say_so_rather_than_404(client) -> None:

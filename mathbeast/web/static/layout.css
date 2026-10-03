@@ -308,6 +308,17 @@
   text-align: center;
 }
 
+/* The backend's state, said beside the composer rather than behind the
+   menu. The box itself is the panel family's .notice, defined in
+   mathbeast.css with its pair classes, so the red that arrives is the
+   measured token pair and not a colour written here. Width follows the
+   column instead of the words: the detail line is a URL the server chose,
+   and a shrink-wrapped box would be as ragged as that string is long. */
+.stage-block .notice {
+  width: 100%;
+  margin-top: 10px;
+}
+
 /* --- composer ------------------------------------------------------------- */
 
 /* The box from the capture: 597 wide, 95 tall, radius 10, one step lighter

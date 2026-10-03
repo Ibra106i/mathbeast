@@ -86,6 +86,24 @@
            does -- role="alert" announces on content change, not on creation. #}
         <p class="stage-title__error" id="stage-title-error" role="alert" hidden></p>
 
+        {# The state of the thing that answers questions, said on the page
+           itself. Three places already knew it -- the dot in the chrome (a
+           hover title and an aria-label), the bar inside the drawer (which
+           stays shut until you open the menu), and the inspector (a
+           different page). None of them is in front of you while you are
+           looking at the composer, so the home surface says it here, in the
+           same sentences the inspector uses. The colour arrives on the pair
+           class the contrast table already measures; the capture has a
+           backend that answers, so this block renders nothing there. #}
+        {% if not status.available %}
+          <p class="notice notice-down">{{ backend_name }} is not answering. {{ status.detail }}</p>
+        {% elif not models %}
+          <p class="notice">
+            The server is up but has no models. Pull one, for example
+            <code>ollama pull qwen2.5:3b</code>.
+          </p>
+        {% endif %}
+
         {# A plain form to the view whose name matches what the box is for.
            There is no chat backend to post to, and an input that swallows
            typing and does nothing on Enter is a broken affordance. Sending
