@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -50,8 +50,26 @@ def create_app(registry: Registry | None = None) -> FastAPI:
     # -- pages ---------------------------------------------------------------
 
     @app.get("/", include_in_schema=False)
-    def index() -> RedirectResponse:
-        return RedirectResponse("/inspector")
+    def index(request: Request) -> HTMLResponse:
+        """The home surface: title and composer, full stop.
+
+        It used to redirect to the inspector, which meant the first thing a new
+        user saw was a table of model statistics. That is the right page for
+        someone checking a backend, and the wrong one for someone here to solve
+        a problem.
+        """
+        status = reg.backend.status()
+        return templates.TemplateResponse(
+            request,
+            "stage.html",
+            {
+                **base_context(request),
+                "status": status,
+                "models": status.models,
+                # Nothing on the stage is a "view", so no nav item is current.
+                "current": "",
+            },
+        )
 
     @app.get("/inspector", response_class=HTMLResponse)
     def inspector(request: Request) -> HTMLResponse:

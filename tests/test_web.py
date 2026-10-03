@@ -27,10 +27,43 @@ def dead_client():
 # --- pages ------------------------------------------------------------------
 
 
-def test_root_redirects_to_the_inspector(client) -> None:
-    response = client.get("/", follow_redirects=False)
-    assert response.status_code in (302, 307)
-    assert response.headers["location"] == "/inspector"
+def test_root_renders_the_home_stage(client) -> None:
+    """`/` is the composer, not a redirect into model statistics.
+
+    The inspector stays reachable, but a first-time visitor should land on
+    the thing they came to use.
+    """
+    response = client.get("/")
+    assert response.status_code == 200
+    assert 'class="stage"' in response.text
+
+
+def test_the_stage_drawer_is_hidden_without_javascript(client) -> None:
+    """`hidden` is the default, so a failed script leaves a closed menu.
+
+    The alternative -- an open drawer -- would cover the page it was meant
+    to navigate away from.
+    """
+    body = client.get("/").text
+    assert '<aside class="drawer" id="drawer" hidden>' in body
+    assert 'class="scrim" data-drawer-close hidden' in body
+
+
+def test_the_inspector_is_still_reachable_from_the_root(client) -> None:
+    body = client.get("/").text
+    assert 'href="/inspector"' in body
+
+
+@pytest.mark.parametrize("path", ["/", "/inspector"])
+def test_the_document_starts_with_the_doctype(client, path) -> None:
+    """Whitespace ahead of the doctype is stripped, not merely tolerated.
+
+    The shared shell begins with a comment; without whitespace control the
+    newline it sits on is emitted first.
+    """
+    body = client.get(path).text
+    assert body.lstrip().startswith("<!DOCTYPE html>")
+    assert not body.startswith((" ", "\n", "\t"))
 
 
 def test_inspector_renders(client) -> None:
@@ -138,10 +171,12 @@ def test_the_sse_extension_is_vendored(client) -> None:
 
 def test_css_is_served(client) -> None:
     assert client.get("/static/mathbeast.css").status_code == 200
+    assert client.get("/static/tokens.css").status_code == 200
+    assert client.get("/static/layout.css").status_code == 200
 
 
 def test_no_page_references_an_external_origin(client) -> None:
-    for path in ("/inspector", "/ask", "/practice", "/coverage", "/eval"):
+    for path in ("/", "/inspector", "/ask", "/practice", "/coverage", "/eval"):
         body = client.get(path).text
         assert "http://" not in body.replace("http://www.w3.org", "")
         assert "https://" not in body.replace("https://www.w3.org", "")

@@ -1,0 +1,30 @@
+{#- The document shell.
+
+   base.html (the tool pages) and stage.html (the home surface) differ in body
+   structure but not here, and a divergence in one would mean a page silently
+   loses the vendored JS or the stylesheet order. One file, both.
+
+   Every piece of markup a child wants to supply must live inside a block:
+   Jinja discards top-level content in a template that extends, which is
+   exactly how the body vanished on the first pass.
+
+   The dashes on this comment are load-bearing -- without them the newline
+   after it lands before the doctype.
+-#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MathBeast{% endblock %}</title>
+  <link rel="stylesheet" href="/static/tokens.css">
+  <link rel="stylesheet" href="/static/mathbeast.css">
+  {% block stylesheets %}{% endblock %}
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/sse.js" defer></script>
+</head>
+<body{% block body_attrs %}{% endblock %}>
+  {% block body %}{% endblock %}
+  <script src="/static/mathbeast.js" defer></script>
+</body>
+</html>

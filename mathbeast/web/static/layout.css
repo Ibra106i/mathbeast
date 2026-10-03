@@ -1,0 +1,207 @@
+/* Layout for the home surface only.
+ *
+ * Geometry here comes from a 1600 x 950 capture of the reference UI. Where a
+ * number could be measured from that image it is exact; where it could not, it
+ * is a deliberate approximation and says so.
+ */
+
+/* --- shell ---------------------------------------------------------------- */
+
+.stage {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* --- chrome bar ----------------------------------------------------------- */
+
+/* Icons sit centred at y=16 in the capture, which puts the bar at 44px. */
+.chrome {
+  flex: none;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.chrome-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 26px wide puts successive centres 30px apart; the capture shows 27-31. */
+.chromebtn {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.chromebtn:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text);
+}
+
+.chromebtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.chromebtn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The history glyph is filled dots inside a stroked bubble, so it needs its
+   circles painted rather than stroked. */
+.chromebtn svg circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* --- backend status ------------------------------------------------------- */
+
+/* Colour alone would fail anyone who cannot separate the two states, so the
+   dot carries the state in its accessible name and its title, and the size
+   difference is a second, redundant cue. */
+.backenddot {
+  width: 7px;
+  height: 7px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 0 3px rgb(var(--good-rgb) / 0.16);
+}
+
+.backenddot.is-down {
+  width: 9px;
+  height: 9px;
+  margin-right: 3px;
+  background: var(--down);
+  box-shadow: 0 0 0 3px var(--down-soft);
+}
+
+/* --- drawer --------------------------------------------------------------- */
+
+.drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  width: min(300px, 84vw);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface-sunken);
+  border-right: 1px solid var(--border);
+}
+
+.drawer[hidden],
+.scrim[hidden] {
+  display: none;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 26px;
+}
+
+.drawer-title {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--text);
+}
+
+.drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 13.5px;
+  text-decoration: none;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.drawer-link:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text);
+}
+
+.drawer-link.is-current {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--text);
+}
+
+.drawer-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Planned views stay legible rather than greyed to invisibility: "not built
+   yet" is only useful if it can be read. */
+.drawer-link.is-planned {
+  opacity: 0.72;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgb(0 0 0 / 0.55);
+}
+
+/* --- centred stage -------------------------------------------------------- */
+
+.stage-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* In the capture the greeting/composer block spans y=330..495 in a 950px
+     frame, so its centre sits 63px above the viewport centre. Padding at the
+     bottom of a centred flex container shifts content up by half its own
+     height, hence 126. A fixed offset rather than a percentage: the reference
+     is a fixed proportion of a fixed capture, and a % would drift on a very
+     short window. */
+  padding-bottom: 126px;
+  padding-inline: 20px;
+}
+
+/* Nothing to show until the title lands in the next phase. */
+.stage-block {
+  width: 100%;
+  max-width: var(--composer-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}MathBeast{% endblock %}</title>
-  <link rel="stylesheet" href="/static/tokens.css">
-  <link rel="stylesheet" href="/static/mathbeast.css">
-  <script src="/static/vendor/htmx.min.js" defer></script>
-  <script src="/static/vendor/sse.js" defer></script>
-</head>
-<body hx-ext="sse,ignore:boost">
+{% extends "_shell.html" %}
+
+{% block body_attrs %} hx-ext="sse,ignore:boost"{% endblock %}
+
+{% block body %}
   <header class="topbar">
     <a class="brand" href="/inspector">MathBeast</a>
     {% include "_status_bar.html" %}
@@ -30,7 +23,4 @@
       {% block content %}{% endblock %}
     </main>
   </div>
-
-  <script src="/static/mathbeast.js" defer></script>
-</body>
-</html>
+{% endblock %}

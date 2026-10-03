@@ -1,0 +1,69 @@
+{% extends "_shell.html" %}
+{% from "_icons.html" import icon %}
+
+{#
+  The home surface: a sibling of base.html rather than a child.
+
+  base.html is header-over-sidebar for the tool pages; this is full-bleed and
+  centred. Forcing either into the other's structure would leave conditionals
+  in two templates that both have to stay readable. They share _shell.html,
+  which is where duplication actually hurts.
+#}
+
+{% block title %}MathBeast{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="/static/layout.css">{% endblock %}
+{% block body_attrs %} class="stage" hx-ext="sse,ignore:boost"{% endblock %}
+
+{% block body %}
+  <div class="chrome">
+    <div class="chrome-group">
+      <button class="chromebtn" type="button" data-drawer-toggle
+              aria-expanded="false" aria-controls="drawer" aria-label="Menu">
+        {{ icon("menu") }}
+      </button>
+      <button class="chromebtn" type="button" onclick="history.back()"
+              aria-label="Back">{{ icon("back") }}</button>
+      <button class="chromebtn" type="button" onclick="history.forward()"
+              aria-label="Forward">{{ icon("forward") }}</button>
+    </div>
+
+    <div class="chrome-group">
+      {# Not a second menu button: two toggles opening one drawer is a bug
+         wearing a second icon. This is the backend status the drawer already
+         reports in detail -- an answer to "is this going to work at all?" that
+         doesn't require opening anything. #}
+      <span class="backenddot is-{{ 'up' if status.available else 'down' }}"
+            title="{{ backend_name }}{% if status.detail %}: {{ status.detail }}{% endif %}"
+            role="img"
+            aria-label="{{ backend_name }} {{ 'reachable' if status.available else 'unreachable' }}"></span>
+    </div>
+  </div>
+
+  <aside class="drawer" id="drawer" hidden>
+    <div class="drawer-head">
+      <span class="drawer-title">MathBeast</span>
+      <button class="chromebtn" type="button" data-drawer-close
+              aria-label="Close menu">&times;</button>
+    </div>
+
+    <nav class="drawer-nav">
+      {% for view in views %}
+        <a class="drawer-link {% if current == view %}is-current{% endif %} {% if view not in implemented %}is-planned{% endif %}"
+           href="/{{ view }}">
+          <span>{{ view }}</span>
+          {% if view not in implemented %}<span class="badge">soon</span>{% endif %}
+        </a>
+      {% endfor %}
+      <a class="drawer-link {% if current == 'inspector' %}is-current{% endif %}" href="/inspector">
+        <span>inspector</span>
+      </a>
+    </nav>
+
+    {% include "_status_bar.html" %}
+  </aside>
+  <div class="scrim" data-drawer-close hidden></div>
+
+  <main class="stage-main">
+    {% block content %}{% endblock %}
+  </main>
+{% endblock %}
