@@ -31,9 +31,11 @@
 
   // The off-canvas menu on the home surface.
   //
-  // No animation yet: `hidden` is what makes the panel correct when the script
-  // fails to load or JS is off, and trading that for a transition would need a
-  // frame-delay hack. Motion belongs in the states pass, not here.
+  // It does not slide, and that is settled rather than forgotten. `hidden` is
+  // what keeps the panel correct when this file fails to load or JS is off;
+  // dropping it means a reflow hack to start a transition, or @starting-style,
+  // which is newer than the browsers this app otherwise asks for. The states
+  // that do exist move in the stylesheets instead -- see the motion tokens.
   function initDrawer() {
     var drawer = document.getElementById("drawer");
     if (!drawer) return;

@@ -109,6 +109,11 @@
 
   /* --- motion ------------------------------------------------------------- */
 
+  /* Two speeds, and what separates them is who caused the change: --fast
+   * answers the pointer, --med is for a state that arrived from the server
+   * and should be seen arriving. No element declares a duration of its own;
+   * a number written beside a transition is a number nobody can correct in
+   * one place. `prefers-reduced-motion` is handled once, in mathbeast.css. */
   --fast: 120ms;
   --med: 200ms;
   --ease: cubic-bezier(0.2, 0, 0.2, 1);

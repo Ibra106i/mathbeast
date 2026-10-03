@@ -120,6 +120,7 @@ html, body {
   text-decoration: none;
   font-size: 14px;
   text-transform: capitalize;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 
 .navitem:hover { background: var(--wash-hover); color: var(--text); }
@@ -246,6 +247,13 @@ code {
   background: var(--surface-raised);
   color: var(--text);
   cursor: pointer;
+  /* Pointer feedback is fast; the dim the button takes while htmx is away
+     is a thing that arrived from the server, so it is allowed to be seen
+     arriving and runs a shade longer. */
+  transition:
+    border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    opacity var(--med) var(--ease);
 }
 
 .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
@@ -269,3 +277,20 @@ select:focus-visible {
 }
 
 .htmx-request .btn { opacity: 0.6; }
+
+/* Every duration on this page comes from --fast or --med, so asking for no
+   motion is one switch rather than a hunt. Nothing animates outright -- only
+   transitions exist -- so shortening them to a frame is the whole of it, and
+   the end state the user asked for arrives at once.
+
+   It lives in the stylesheet every page loads rather than beside the
+   transitions themselves: layout.css is loaded after this file, so the
+   !important is what makes the answer apply there too. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

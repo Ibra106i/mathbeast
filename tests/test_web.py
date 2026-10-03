@@ -456,6 +456,12 @@ def _rule_body(path: Path, selector: str) -> str:
     return re.sub(r"\s+", " ", match.group(1)).strip()
 
 
+def _decl(path: Path, selector: str, prop: str) -> str:
+    match = re.search(re.escape(prop) + r"\s*:\s*([^;]+);", _rule_body(path, selector))
+    assert match, f"{selector} declares no {prop}"
+    return match.group(1).strip()
+
+
 def _stylesheets() -> str:
     return "\n".join(
         (_static() / name).read_text(encoding="utf-8") for name in ("layout.css", "mathbeast.css")
@@ -474,6 +480,42 @@ def test_the_drawer_and_the_sidenav_are_one_list_twice() -> None:
         drawer = _rule_body(_static() / "layout.css", ".drawer-link" + state)
         side = _rule_body(_static() / "mathbeast.css", ".navitem" + state)
         assert drawer == side, f"{state} disagrees: {drawer!r} vs {side!r}"
+
+    # The sixth is not a state but the speed of one: a row that eases on the
+    # drawer and snaps on the sidenav is the same disagreement wearing a
+    # different hat, and it is the one nobody would ever report.
+    assert _decl(_static() / "layout.css", ".drawer-link", "transition") == _decl(
+        _static() / "mathbeast.css", ".navitem", "transition"
+    )
+
+
+def test_no_element_invents_a_duration_of_its_own() -> None:
+    """A `120ms` written beside a transition is a number nobody can change once.
+
+    There are two speeds and a curve, and they live in tokens.css where a
+    correction lands in one place. This does not look at `transition-duration`
+    in the reduced-motion block -- that one is deliberately not a token, so
+    that turning motion off does not depend on the tokens being right.
+    """
+    for value in re.findall(r"transition:\s*([^;]+);", _stylesheets()):
+        literal = re.findall(r"\b\d[\d.]*m?s\b", value)
+        assert not literal, f"a transition carries its own duration: {value!r}"
+        assert "var(--fast)" in value or "var(--med)" in value, value
+
+
+def test_asking_for_less_motion_is_answered_once() -> None:
+    """The switch lives in the stylesheet every page loads.
+
+    layout.css is loaded after mathbeast.css on the stage, so a rule there
+    without `!important` would lose to the transitions it is meant to switch
+    off -- which is exactly how a preference ends up honoured on four pages
+    and ignored on the one people look at.
+    """
+    css = (_static() / "mathbeast.css").read_text(encoding="utf-8")
+    block = re.search(r"@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*)\}\s*$", css)
+    assert block, "nothing answers prefers-reduced-motion"
+    assert "transition-duration: 0.01ms !important" in block.group(1)
+    assert "!important" in block.group(1)
 
 
 def test_everything_that_takes_focus_says_so_when_it_is_reached() -> None:

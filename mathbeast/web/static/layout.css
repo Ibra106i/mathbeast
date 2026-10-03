@@ -292,6 +292,7 @@
   text-align: inherit;
   caret-color: var(--accent);
   border-radius: 0;
+  transition: border-bottom-color var(--fast) var(--ease);
 }
 
 .stage-title__input:focus {
@@ -327,6 +328,10 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--composer-radius);
+  /* Only the focus ring moves. The border itself is measured and does not
+     change on focus -- the ring is a shadow drawn just outside it -- so
+     transitioning the border as well would buy nothing. */
+  transition: box-shadow var(--fast) var(--ease);
 }
 
 /* Focus has to be visible to a keyboard user, but only while focus is
