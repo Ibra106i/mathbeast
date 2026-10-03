@@ -51,7 +51,7 @@
 }
 
 .chromebtn:hover {
-  background: rgb(255 255 255 / 0.06);
+  background: var(--wash-hover);
   color: var(--text);
 }
 
@@ -152,12 +152,12 @@
 }
 
 .drawer-link:hover {
-  background: rgb(255 255 255 / 0.06);
+  background: var(--wash-hover);
   color: var(--text);
 }
 
 .drawer-link.is-current {
-  background: rgb(255 255 255 / 0.08);
+  background: var(--wash-current);
   color: var(--text);
 }
 
@@ -176,7 +176,7 @@
   position: fixed;
   inset: 0;
   z-index: 20;
-  background: rgb(0 0 0 / 0.55);
+  background: var(--scrim);
 }
 
 /* --- centred stage -------------------------------------------------------- */

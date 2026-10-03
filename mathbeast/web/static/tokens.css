@@ -5,7 +5,8 @@
  * original file directly.
  *
  * This file is the single source of colour and type. Component CSS may only
- * reference these, never a literal hex, so a correction lands in one place.
+ * reference these, never a literal hex or an rgb() written out with numbers,
+ * so a correction lands in one place.
  */
 
 :root {
@@ -20,6 +21,17 @@
   --surface-sunken: #080808;   /* drawer, when it opens */
   --border: #333333;
   --border-soft: #262626;
+
+  /* --- overlays ------------------------------------------------------------ */
+
+  /* What is painted on top of a surface rather than being it. The capture
+   * shows neither a hovered row nor an open drawer, so these three are ours
+   * rather than measured: a white veil at the two strengths hover and
+   * selection need, and the scrim behind an open drawer at the strength that
+   * still lets the stage be read through it. */
+  --wash-hover: rgb(255 255 255 / 0.06);
+  --wash-current: rgb(255 255 255 / 0.08);
+  --scrim: rgb(0 0 0 / 0.55);
 
   /* Colours are stored as bare rgb triples so tints can be derived from them
    * with slash-alpha rather than repeating the literal in every stylesheet.

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 import pytest
 
 from mathbeast.models import FakeBackend, Registry
@@ -424,6 +427,23 @@ def test_css_is_served(client) -> None:
     assert client.get("/static/mathbeast.css").status_code == 200
     assert client.get("/static/tokens.css").status_code == 200
     assert client.get("/static/layout.css").status_code == 200
+
+
+def test_colour_lives_in_tokens_and_nowhere_else() -> None:
+    """A literal that escapes the token file is a correction made in two places.
+
+    A hex is the obvious way to do it. An rgb() written out with numbers is
+    the same mistake in a form that never matches "#", which is how the
+    drawer's hover, its selected row and its scrim each ended up carrying a
+    value nothing could reconcile against the capture.
+    """
+    static = Path(__file__).resolve().parents[1] / "mathbeast" / "web" / "static"
+    escape = re.compile(r"#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d|hsla?\(\s*\d")
+    for path in sorted(static.glob("*.css")):
+        if path.name == "tokens.css":
+            continue
+        found = escape.findall(path.read_text(encoding="utf-8"))
+        assert not found, f"{path.name} defines colour itself: {found}"
 
 
 def test_no_page_references_an_external_origin(client) -> None:
