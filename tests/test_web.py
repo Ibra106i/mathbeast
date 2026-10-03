@@ -1072,7 +1072,7 @@ def test_measured_geometry_lives_outside_every_media_query() -> None:
     shell = _without_media(_static() / "mathbeast.css")
 
     assert _declared(stage, ".stage-main", "padding-inline") == "20px"
-    assert _declared(stage, ".stage-main", "padding-bottom") == "126px"
+    assert _declared(stage, ".stage-main", "padding-bottom") == "168px"
     assert _declared(stage, ".stage-block", "max-width") == "var(--composer-width)"
     assert _declared(stage, ".composer", "min-height") == "var(--composer-min-height)"
     assert _declared(stage, ".composer-bar", "min-height") == "25px"

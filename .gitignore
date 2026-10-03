@@ -10,3 +10,4 @@ venv/
 .coverage
 htmlcov/
 .env
+capture.png

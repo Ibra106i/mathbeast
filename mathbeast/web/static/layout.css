@@ -19,10 +19,10 @@
 
 /* --- chrome bar ----------------------------------------------------------- */
 
-/* Icons sit centred at y=16 in the capture, which puts the bar at 44px. */
+/* Icons sit centred at y=16 in the capture, which puts the bar at 32px. */
 .chrome {
   flex: none;
-  height: 44px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -196,13 +196,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* In the capture the greeting/composer block spans y=330..495 in a 950px
-     frame, so its centre sits 63px above the viewport centre. Padding at the
+  /* In the capture the greeting/composer block spans y=330..503 in a 969px
+     frame: a 46px title row, a 32px gap, the 95px composer. Its centre sits
+     84px above the centre of the space below the 32px chrome. Padding at the
      bottom of a centred flex container shifts content up by half its own
-     height, hence 126. A fixed offset rather than a percentage: the reference
+     height, hence 168. A fixed offset rather than a percentage: the reference
      is a fixed proportion of a fixed capture, and a % would drift on a very
      short window. */
-  padding-bottom: 126px;
+  padding-bottom: 168px;
   padding-inline: 20px;
 }
 
@@ -224,7 +225,9 @@
   align-items: center;
   justify-content: center;
   gap: 9px;
-  margin: 0 0 26px;
+  /* The capture puts the title row at y=330..376 and the composer's top
+     edge at y=408: 32px of gap, not 26. */
+  margin: 0 0 32px;
   padding: 0;
   font-family: var(--font-serif);
   font-size: var(--text-title);
@@ -245,8 +248,10 @@
 }
 
 .stage-title__mark svg {
-  width: 28px;
-  height: 28px;
+  /* 38px draws the asterisk's ink at 32x36; the capture's mark measures
+     33x33. */
+  width: 38px;
+  height: 38px;
   fill: none;
   stroke: var(--accent);
   stroke-width: 1.5;
@@ -491,7 +496,7 @@
      259px of content against 253px of room at a 320px viewport -- 8px back
      from each side leaves 269 -- and at 640px the viewport minus the desktop
      20px of padding is 600, three pixels short of the composer's own 597.
-   - padding-bottom stays at 126px. It measured clean at every width down to
+   - padding-bottom stays at 168px. It measured clean at every width down to
      320 (no doc scroll, the block never lands under the chrome), so there is
      nothing to change and changing it would move a desktop number.
    - the title is left to wrap to two lines rather than shrink: it does not
