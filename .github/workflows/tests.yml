@@ -30,3 +30,9 @@ jobs:
       - name: Report the CAS version the guarantee rests on
         run: python -c "import sympy; print('sympy', sympy.__version__)"
       - run: pytest -q
+      # tests/test_capture.py skips here and that is deliberate, not an
+      # oversight to fix. It diffs the render against a design reference that
+      # is a drawing and lives outside the repository on purpose, so this job
+      # has no image to compare against; installing the harness extra would
+      # only add a browser download to every run to reach a skip. It is run by
+      # hand -- see the README's "pixel harness, and why it is manual".

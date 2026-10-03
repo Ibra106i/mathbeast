@@ -2,7 +2,8 @@
 
 Twenty pushes, one phase each, the app runnable after every one. Phases 1 to 8
 are in `git log`. This file is the plan for 9 through 20, because the plan for
-them was living in a conversation and would not have survived it.
+them was living in a conversation and would not have survived it. All twenty
+are delivered; the rows below stay as the record of what each one promised.
 
 Constraints that apply to every row below:
 
@@ -31,8 +32,15 @@ Constraints that apply to every row below:
 
 ## Not scheduled
 
-Enabling `+`, the mode pill and the tier badge. Each needs something real to do
-first — a pack loader, a second input mode, a verification tier — and
-deciding *that* is a product question, not a styling phase. They are the three
-things the page deliberately does not claim. Scheduling them before the
-decisions exist would be the same lie the disabled button is there to avoid.
+Enabling the three controls that ship `disabled` — **New question**,
+**Dictate** and **Choose model**. Each needs something real to do first: a
+pack loader behind two of them, a second input mode behind the third. Deciding
+*that* is a product question, not a styling phase. They are the three things
+the page deliberately does not claim, and the README's "What the page does not
+claim yet" table lists each one against the code — a test reads that table and
+fails when a control and its row drift apart.
+
+**Chat** and **Medium**, the mode and tier words beside them, were named here
+too and should not have been. They are spans, not controls: there is no
+affordance to break and nothing to disable. They stay as words on the surface
+until an input mode and a verification tier actually exist.

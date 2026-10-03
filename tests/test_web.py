@@ -670,7 +670,7 @@ def test_the_home_surface_tabs_in_reading_order(client) -> None:
     happens to give you only while nothing has reordered it, so this pins
     down the shape the screen reader walks: chrome first, then the heading
     it edits, then the field, then the row of controls under it.
-    """
+"""
     stops = _focus_stops(client.get("/").text)
     assert stops == [
         ("Menu", False),
@@ -682,6 +682,37 @@ def test_the_home_surface_tabs_in_reading_order(client) -> None:
         ("Dictate", True),
         ("Choose model", True),
     ]
+
+
+def test_every_disabled_control_is_listed_with_what_it_waits_for(client) -> None:
+    """A control ships disabled until it has something real to do, and the
+    README says what each one is waiting for.
+
+    Read from both ends on purpose: the rendered page says which controls are
+    disabled, the README table says what each is waiting for, and neither can
+    change alone. A fourth disabled button fails here until someone writes down
+    what it waits for, and so does a table row whose last cell is empty --
+    which is the failure this whole arrangement exists to prevent, a promise
+    made by a stylesheet and forgotten by the project.
+    """
+    readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(
+        encoding="utf-8")
+    section = readme.split("## What the page does not claim yet")[1].split("\n## ")[0]
+
+    listed: dict[str, str] = {}
+    for label, where, waiting in re.findall(
+        r"^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$", section, flags=re.M
+    ):
+        if label == "Control" or label.startswith("-"):
+            continue
+        assert waiting.strip(), f"{label} is listed with nothing it is waiting for"
+        listed[label] = where
+
+    shipped = {name for name, off in _focus_stops(client.get("/").text) if off}
+    assert shipped == set(listed), (
+        f"the page and the README disagree about the disabled controls: "
+        f"{sorted(shipped ^ set(listed))}"
+    )
 
 
 def test_the_drawer_keeps_the_tab_key_inside_itself() -> None:

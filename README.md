@@ -22,6 +22,59 @@ mathbeast explain pythagoras       # see the verified working
 mathbeast coverage                 # what the pack covers
 ```
 
+## The web surface
+
+The same engine, with a page in front of it. One surface asks, one lists what
+the pack covers, one reports what the model server is actually doing.
+
+```bash
+pip install -e ".[web]"
+mathbeast serve                    # http://127.0.0.1:8000
+```
+
+`serve` takes `--port`, `--model` and `--ollama-url`. Without a backend it
+still starts and says so on the page rather than failing: the empty state is a
+sentence, not an error page.
+
+No npm, no bundler, no CDN — Jinja, HTMX and SSE are vendored, and the whole
+front end is three stylesheets and one script.
+
+### The title's typeface is measured, not chosen
+
+The heading is a serif, and which serif was settled by measuring the design
+reference rather than by taste. Proportions a face cannot fake — x-height
+against caps, ascender against caps, width against cap height, and how the ink
+divides between the words — were measured off the reference and every candidate
+face rendered and measured the same way. Times New Roman was closest, at 7.4
+summed percentage error against 10.0 for the next candidate.
+
+Two things that *look* like evidence were deliberately excluded: ink density
+and stroke contrast. The reference is a drawing traced with roughly three times
+the ink of a 400-weight serif, so both are properties of the tracer's pen.
+
+No face was vendored. Nothing redistributable was available that fit, and the
+one family present on Windows and macOS is metric-compatible on Linux, so all
+three platforms draw the same letterforms. The numbers are in
+[`tokens.css`](mathbeast/web/static/tokens.css) beside the stack they chose.
+
+### The pixel harness, and why it is manual
+
+`tests/test_capture.py` renders the home surface at 1622×969 in Chromium and
+diffs it against the design reference: chrome, composer, title, mark — landmark
+positions and box sizes, never pixels. It prints every delta, asserts what the
+design fixes, and writes down what it deliberately does not assert.
+
+It is manual because the reference is a drawing that deliberately lives outside
+the repository. CI has nothing to diff against, so the module skips there.
+
+```bash
+pip install -e ".[dev,web,harness]"
+playwright install chromium
+
+export MATHBEAST_CAPTURE=/path/to/reference.png
+python -m pytest tests/test_capture.py -q -s      # -s prints the delta report
+```
+
 ## The benchmark
 
 **Not yet measured.** This is the number the project is really about, and it
@@ -139,6 +192,28 @@ properly. [Full map, including what is missing](docs/syllabus-map.md).
 > enforced in code; the codes below them (`C1.10`, `E2.3`) were reconstructed
 > from public summaries rather than the official PDF. Checking one against the
 > specification is a good first issue.
+
+## What the page does not claim yet
+
+A control that cannot do anything ships `disabled` rather than answering a
+click with nothing — the same lie the engine refuses to tell about an answer.
+Each one is listed here with what it is waiting for, and a test reads this
+table and fails if the code and this list drift apart.
+
+| Control | Where | Waiting for |
+|---|---|---|
+| New question | composer bar | a pack loader — there is nothing yet to load |
+| Dictate | composer bar | a second input mode — the engine takes text only |
+| Choose model | composer bar | a pack loader — one backend is configured per install |
+
+One control is disabled for the opposite reason. The inspector's **measure
+tok/s** is disabled exactly while no model is loaded or the backend is away,
+which is not a missing feature but a missing subject, and it says which of the
+two it is on its own face rather than going quietly grey.
+
+Two more words on that bar — **Chat** and **Medium** — are spans, not buttons.
+They name an input mode and a verification tier that do not exist yet, so they
+carry no affordance to break and nothing to disable.
 
 ## Write a skill in twenty minutes
 

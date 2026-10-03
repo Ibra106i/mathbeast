@@ -26,6 +26,17 @@ web = [
     "jinja2>=3.1",
     "python-multipart>=0.0.9",
 ]
+# The pixel harness needs a browser it drives itself, an array library to diff
+# with, and an image library to read the capture. It is a separate extra
+# because the harness is manual rather than part of the gate: the capture is a
+# drawing that deliberately lives outside the repository, so CI has nothing to
+# diff against and skips the module. Installing this extra is not enough on its
+# own -- the browser binary is a second step, `playwright install chromium`.
+harness = [
+    "playwright>=1.40",
+    "numpy>=1.24",
+    "pillow>=10.0",
+]
 
 [project.scripts]
 mathbeast = "mathbeast.cli:main"
