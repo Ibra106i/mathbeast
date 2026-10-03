@@ -446,6 +446,27 @@ def test_colour_lives_in_tokens_and_nowhere_else() -> None:
         assert not found, f"{path.name} defines colour itself: {found}"
 
 
+def _rule_body(path: Path, selector: str) -> str:
+    match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", path.read_text(encoding="utf-8"))
+    assert match, f"{selector} is not declared in {path.name}"
+    return re.sub(r"\s+", " ", match.group(1)).strip()
+
+
+def test_the_drawer_and_the_sidenav_are_one_list_twice() -> None:
+    """Hover, current and planned are styled twice, so one of them is drifting.
+
+    None of the three states is measured anywhere -- the capture shows no
+    drawer open and no page other than the home surface -- which leaves
+    agreement between the two shells as the only defence against the same
+    state quietly meaning two different things.
+    """
+    static = Path(__file__).resolve().parents[1] / "mathbeast" / "web" / "static"
+    for state in (":hover", ".is-current", ".is-planned"):
+        drawer = _rule_body(static / "layout.css", ".drawer-link" + state)
+        side = _rule_body(static / "mathbeast.css", ".navitem" + state)
+        assert drawer == side, f"{state} disagrees: {drawer!r} vs {side!r}"
+
+
 def test_no_page_references_an_external_origin(client) -> None:
     for path in ("/", "/inspector", "/ask", "/practice", "/coverage", "/eval"):
         body = client.get(path).text

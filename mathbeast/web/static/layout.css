@@ -167,9 +167,10 @@
 }
 
 /* Planned views stay legible rather than greyed to invisibility: "not built
-   yet" is only useful if it can be read. */
+   yet" is only useful if it can be read. The same ink the sidenav already
+   uses for it, rather than an opacity that lands somewhere untested. */
 .drawer-link.is-planned {
-  opacity: 0.72;
+  color: var(--text-faint);
 }
 
 .scrim {

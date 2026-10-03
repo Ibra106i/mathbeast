@@ -28,6 +28,9 @@ html, body {
 
 /* ---------- top bar ---------- */
 
+/* The chrome is the body's colour rather than a surface of its own -- the
+   rule the stage's bar follows, so both shells read as one page. The 1px
+   rule underneath is what separates it from what scrolls below. */
 .topbar {
   position: sticky;
   top: 0;
@@ -37,7 +40,7 @@ html, body {
   gap: 18px;
   padding: 0 20px;
   height: 54px;
-  background: var(--surface);
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
@@ -87,6 +90,8 @@ html, body {
   align-items: start;
 }
 
+/* The drawer, with nowhere to slide to: same fill, same rule, so the nav is
+   the same object whether it is open over the stage or built into the page. */
 .sidenav {
   position: sticky;
   top: 54px;
@@ -95,6 +100,8 @@ html, body {
   gap: 2px;
   padding: 18px 12px;
   height: calc(100vh - 54px);
+  background: var(--surface-sunken);
+  border-right: 1px solid var(--border);
 }
 
 .navitem {
@@ -110,8 +117,8 @@ html, body {
   text-transform: capitalize;
 }
 
-.navitem:hover { background: var(--surface); color: var(--text); }
-.navitem.is-current { background: var(--surface-raised); color: var(--text); font-weight: 600; }
+.navitem:hover { background: var(--wash-hover); color: var(--text); }
+.navitem.is-current { background: var(--wash-current); color: var(--text); }
 .navitem.is-planned { color: var(--text-faint); }
 
 .badge {

@@ -14,11 +14,19 @@
 
   /* The page is a neutral near-black. The reference's window chrome carries
    * no distinct surface of its own, so the top bar and the body are one
-   * colour rather than one slightly lighter than the other. */
+   * colour rather than one slightly lighter than the other -- on every page,
+   * not only the one the capture shows. */
   --bg: #131313;
-  --surface: #1d1d1d;          /* the composer box, and the only raised panel */
-  --surface-raised: #3f3f3f;   /* the "Chat" pill */
-  --surface-sunken: #080808;   /* drawer, when it opens */
+  /* A raised panel sitting on the page: the composer box on the home
+   * surface, the cards on the inspector. */
+  --surface: #1d1d1d;
+  /* Something proud of a surface rather than the surface itself: the "Chat"
+   * pill, buttons, code chips, notices. */
+  --surface-raised: #3f3f3f;
+  /* The navigation, whether it is the drawer sliding in over the stage or
+   * the sidenav built permanently into the page. One value so the two read
+   * as the same list twice. */
+  --surface-sunken: #080808;
   --border: #333333;
   --border-soft: #262626;
 
