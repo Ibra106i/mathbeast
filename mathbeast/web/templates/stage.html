@@ -98,7 +98,36 @@
                     name="q"
                     rows="1"
                     aria-label="Ask a question"
-                    placeholder="Ask MathBeast anything..."></textarea>
+                    placeholder="How can I help you today?"></textarea>
+
+          {# The bottom row from the capture.
+
+             The three glyphs are buttons and all three ship disabled: one
+             that looks live and answers a click with nothing is the same lie
+             the form above posts to /ask to avoid, so each keeps its shape
+             and loses its claim until it has somewhere real to send a click.
+
+             The rest is readout. The model is whichever one the backend is
+             actually running; "Chat" and "Medium" name the input mode and the
+             verification tier, neither of which exists yet -- words on a
+             surface rather than affordances, so they sit here honestly. #}
+          <div class="composer-bar">
+            <div class="composer-bar__start">
+              <button class="composer-icon" type="button" disabled
+                      aria-label="New question">{{ icon("plus") }}</button>
+              <span class="composer-mode">Chat</span>
+            </div>
+            <div class="composer-bar__end">
+              {% if model %}<span class="composer-model">{{ model }}</span>{% endif %}
+              <span class="composer-tier">Medium</span>
+              <span class="composer-tools">
+                <button class="composer-icon" type="button" disabled
+                        aria-label="Dictate">{{ icon("mic") }}</button>
+                <button class="composer-icon composer-icon--dim" type="button" disabled
+                        aria-label="Choose model">{{ icon("chevron") }}</button>
+              </span>
+            </div>
+          </div>
         </form>
       </div>
     {% endblock %}

@@ -101,16 +101,45 @@ def test_the_editor_is_told_the_ceiling_rather_than_reimplementing_it(client) ->
 
 
 def test_the_composer_is_a_box_you_can_type_into(client) -> None:
-    """One textarea in a form, and nothing else.
+    """One textarea in a form, with the capture's row beneath it.
 
     The pills, the send button, the attachments are all chrome bolted around
-    a text field, so the field is what has to be right first. Anything the
-    box claims to do that it cannot yet do does not belong in it yet.
+    a text field, so the field is what has to be right first. The row that
+    landed under it is chrome too, and is held to the same rule the rest of
+    the page is: anything the box claims to do that it cannot yet do does not
+    belong in it yet.
     """
     body = client.get("/").text
     assert '<form class="composer" action="/ask" method="get">' in body
     assert 'id="composer-input"' in body
-    assert 'placeholder="Ask MathBeast anything..."' in body
+    assert 'placeholder="How can I help you today?"' in body
+
+
+def test_the_composer_bar_shows_what_is_true_and_hides_what_is_not(
+    client,
+) -> None:
+    """The bottom row is the capture's chrome, not a set of live controls.
+
+    It is here so there is a row to compare against the reference, and every
+    glyph in it is a button marked disabled. That is the whole difference
+    between a control nobody has wired up yet and one that is broken: the
+    first is a promise about a later phase, the second is a lie about now.
+    The labels beside them are readouts rather than controls, so they stay
+    plain text -- which is also why they can say what they say.
+    """
+    body = client.get("/").text
+
+    assert '<div class="composer-bar">' in body
+    assert '<span class="composer-mode">Chat</span>' in body
+    assert '<span class="composer-tier">Medium</span>' in body
+    # The model readout is the model the backend is really running, so the
+    # span exists whenever one is configured rather than holding a name
+    # MathBeast has no way to have.
+    assert '<span class="composer-model">' in body
+
+    for label in ("New question", "Dictate", "Choose model"):
+        assert f'aria-label="{label}"' in body
+    assert body.count('type="button" disabled') >= 3
 
 
 def test_the_composer_sends_the_question_where_the_truth_is_told(client) -> None:

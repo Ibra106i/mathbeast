@@ -1,6 +1,6 @@
 /* Layout for the home surface only.
  *
- * Geometry here comes from a 1600 x 950 capture of the reference UI. Where a
+ * Geometry here comes from a 1622 x 969 capture of the reference UI. Where a
  * number could be measured from that image it is exact; where it could not, it
  * is a deliberate approximation and says so.
  */
@@ -300,18 +300,23 @@
 
 /* --- composer ------------------------------------------------------------- */
 
-/* The box from the capture: 615 wide, 91 tall, radius 14, a step lighter than
-   the page and light enough to need no rule of its own to be legible.
+/* The box from the capture: 597 wide, 95 tall, radius 10, one step lighter
+   than the page and ruled round so it reads as a card rather than a panel.
 
-   Padding sits on the children rather than here so the bottom row can run
-   edge to edge when it lands -- a bar inset by the input's own padding would
-   read as a second box drawn inside the first. */
+   The padding sits here rather than on the children so the bottom row can run
+   edge to edge -- a bar inset by the input's own padding would read as a
+   second box drawn inside the first. It is also deliberately lopsided: 15 on
+   the left puts the placeholder's first letter where the capture puts it, and
+   10 on the right puts the chevron where the capture puts it. Those two
+   numbers were measured, not balanced. */
 .composer {
   width: 100%;
-  min-height: 91px;
+  min-height: var(--composer-min-height);
+  padding: 9px 10px 9px var(--composer-pad-x);
   display: flex;
   flex-direction: column;
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--composer-radius);
 }
 
@@ -327,7 +332,7 @@
   width: 100%;
   min-height: 0;
   margin: 0;
-  padding: 14px 15px;
+  padding: 0;
   border: 0;
   background: none;
   color: var(--text);
@@ -349,4 +354,106 @@
 .composer-input::placeholder {
   color: var(--text-faint);
   opacity: 1;
+}
+
+/* --- the bottom row -------------------------------------------------------- */
+
+/* The reference's bar: mode and a new-question button on the left, the model,
+   the tier and the two tools on the right. It is 25px tall and does not grow
+   with the textarea, so the row stays pinned to the floor of the box.
+
+   The space-between does the work of the two groups; gap only matters if the
+   box ever gets narrow enough that they would otherwise touch. */
+.composer-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 25px;
+}
+
+.composer-bar__start,
+.composer-bar__end {
+  display: flex;
+  align-items: center;
+}
+
+/* 14 puts the pill's left edge where the capture puts it, given the 16px
+   button and the 15px box padding that already came before it. */
+.composer-bar__start {
+  gap: 14px;
+}
+
+/* The tools sit further right than the labels do, so they carry their own
+   extra gap rather than being spaced by the same number as everything else. */
+.composer-bar__end {
+  gap: 6px;
+}
+
+.composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 14px;
+}
+
+/* A 16px button holding a 16px glyph: the icon fills the hit area, which is
+   how the capture draws it and small enough that no padding is missed. The
+   glyphs are stroked rather than filled, and they are stroked at a fixed
+   weight so the size below never rescales them. */
+.composer-icon {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  display: inline-grid;
+  place-items: center;
+}
+
+.composer-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The chevron is the quiet one in the capture: a diagonal at this weight
+   never reaches the ink of a horizontal stroke, so it is given the dim
+   token and let it land lighter still. */
+.composer-icon--dim {
+  color: var(--text-dim);
+}
+
+.composer-mode {
+  display: inline-flex;
+  align-items: center;
+  height: 25px;
+  padding: 0 10px;
+  background: var(--surface-raised);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--text-meta);
+  line-height: 1;
+}
+
+.composer-model,
+.composer-tier {
+  font-size: var(--text-meta);
+  color: var(--text-dim);
+}
+
+/* A model name is whatever the backend happens to be running, which can be
+   longer than the space the capture gives it. Ellipsis rather than a wider
+   bar: the tools on the right are the part whose position was measured. */
+.composer-model {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -1,8 +1,8 @@
 /* Design tokens.
  *
- * Values sampled by eye from a screenshot of the reference UI. That image was
- * recompressed in transit, so treat every hex here as +/-5 RGB until it can be
- * compared against the original file with the harness in phase 17.
+ * Measured off a generated 1622x969 PNG of the reference UI, so treat every
+ * hex here as +/-10 RGB until the harness in phase 17 can compare against the
+ * original file directly.
  *
  * This file is the single source of colour and type. Component CSS may only
  * reference these, never a literal hex, so a correction lands in one place.
@@ -11,28 +11,32 @@
 :root {
   /* --- surface ------------------------------------------------------------ */
 
-  /* The page is not pure black; it carries a faint cool cast that reads as
-   * black against a white browser chrome but not against #000. */
-  --bg: #0b0b0d;
-  --surface: #262629;          /* the composer box */
-  --surface-raised: #35353a;   /* the "Chat" pill */
-  --surface-sunken: #08080a;   /* drawer, when it opens */
-  --border: #33333a;
-  --border-soft: #26262c;
+  /* The page is a neutral near-black. The reference's window chrome carries
+   * no distinct surface of its own, so the top bar and the body are one
+   * colour rather than one slightly lighter than the other. */
+  --bg: #131313;
+  --surface: #1d1d1d;          /* the composer box, and the only raised panel */
+  --surface-raised: #3f3f3f;   /* the "Chat" pill */
+  --surface-sunken: #080808;   /* drawer, when it opens */
+  --border: #333333;
+  --border-soft: #262626;
 
   /* Colours are stored as bare rgb triples so tints can be derived from them
    * with slash-alpha rather than repeating the literal in every stylesheet.
    * One source per colour, and no colour-mix(), which would demand a newer
    * browser than this app otherwise requires. */
   --text: #e9e7e4;
-  --text-dim: #8a8a90;
-  --text-faint: #6b6b72;
+  --text-dim: #9b9995;
+  /* The placeholder measures nearer #848380, which is 4.45:1 on --surface
+   * and so fails AA by a hair. This is the same grey lifted to the lowest
+   * value that clears 4.5:1. */
+  --text-faint: #8a8985;
 
   /* --- accent ------------------------------------------------------------- */
 
   /* The asterisk. Salmon rather than a saturated orange: at this size a hotter
    * hue reads as an error state, which would be wrong. */
-  --accent-rgb: 235 165 143;
+  --accent-rgb: 223 132 96;
   --accent: rgb(var(--accent-rgb));
   --accent-soft: rgb(var(--accent-rgb) / 0.14);
   --accent-line: rgb(var(--accent-rgb) / 0.30);
@@ -68,10 +72,15 @@
 
   /* --- metrics ------------------------------------------------------------ */
 
-  /* The composer is 615 x 91 in a 1600px-wide capture, centred. */
-  --composer-width: 615px;
-  --composer-min-height: 91px;
-  --composer-radius: 14px;
+  /* The composer: 597 wide, 95 tall, radius 10, with a 1px rule of its own.
+   * The reference box is a bordered card, not a flat panel -- the border is
+   * inside min-height, because mathbeast.css sets box-sizing globally. */
+  --composer-width: 597px;
+  --composer-min-height: 95px;
+  --composer-radius: 10px;
+  /* The left inset of the box, and therefore the x position of everything
+   * the text starts at. The right inset is 10px and lives in layout.css
+   * beside the rest of the padding, which is deliberately not symmetric. */
   --composer-pad-x: 15px;
 
   --title-radius: 8px;
