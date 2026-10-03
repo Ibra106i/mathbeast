@@ -52,9 +52,16 @@ Two things that *look* like evidence were deliberately excluded: ink density
 and stroke contrast. The reference is a drawing traced with roughly three times
 the ink of a 400-weight serif, so both are properties of the tracer's pen.
 
-No face was vendored. Nothing redistributable was available that fit, and the
-one family present on Windows and macOS is metric-compatible on Linux, so all
-three platforms draw the same letterforms. The numbers are in
+No face was vendored. Both families installed here that could legally be
+vendored measured *worse* than the system faces — Noto Serif 30.1, Liberation
+Serif 21.2, against Times New Roman's 7.4 — so shipping a binary would cost
+real weight to draw the title slightly worse. Where a platform lacks the face,
+the next name in the stack is what draws it, and that was measured rather than
+hoped for: Liberation Serif draws the same 383px of width and one pixel less
+height, which the harness's tolerance holds. Same widths, one pixel out, not
+quite the same face.
+
+The numbers are in
 [`tokens.css`](mathbeast/web/static/tokens.css) beside the stack they chose.
 
 ### The pixel harness, and why it is manual

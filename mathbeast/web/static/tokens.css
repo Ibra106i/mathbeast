@@ -81,8 +81,15 @@
    * capture's x/cap 0.679, asc/cap 1.036 and width/cap 13.75, measured at
    * 40px on this platform: Times New Roman misses by 1.8%, 0.1% and 4.2%
    * and its four word widths land 0.012 from the capture's; Palatino Linotype
-   * is the next at 10.0 summed against 7.4, Georgia 14.4, Cambria 13.4,
-   * Noto Serif 30.1.
+   * is the next at 10.0 summed against 7.4, Constantia 12.9, Cambria 13.4,
+   * Georgia 14.4, Liberation Serif 21.2, Noto Serif 30.1.
+   *
+   * Read that as a filter, not a verdict: at this size a ratio moves by 0.03
+   * for half a pixel, because x-height and cap height are whole pixels. Which
+   * is why the number that decides anything is the one at the size this page
+   * actually renders -- where Times New Roman's x/cap is 0.679 and its
+   * asc/cap 1.036, the capture's own figures exactly, drawing 29px of ink tall
+   * and 383 wide against the capture's 29 and 384.
    *
    * Two numbers are deliberately not in that list. The capture's title has an
    * ink density of 0.415 where every candidate sits between 0.11 and 0.13 --
@@ -91,12 +98,14 @@
    * neither density nor contrast is a property of the face and neither may
    * pick one.
    *
-   * So: a system stack, not a vendored face. Nothing redistributable is
-   * installed here but Noto Serif, and that is the worst fit measured. The
-   * two metric-compatible names keep Linux on the same letterforms as
-   * Windows and macOS, which is what the capture's proportions demand; that
-   * substitution is fontconfig's, not this stylesheet's, and is not measured
-   * here. */
+   * So: a system stack, not a vendored face. Both families installed here that
+   * could legally be vendored measured worse than the system faces -- Noto
+   * Serif 30.1, Liberation Serif 21.2 against Times New Roman's 7.4 -- so
+   * shipping a binary would cost a megabyte of wheel to draw the title
+   * slightly worse. The two names after the first exist for the platforms
+   * without it, and that part is measured too: Liberation Serif draws the same
+   * 383px of width and one pixel less height, which the harness's 2px
+   * tolerance holds. Same widths, one pixel out, not the same face. */
   --font-serif: "Times New Roman", "Liberation Serif", Tinos, "Nimbus Roman",
                  Times, serif;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

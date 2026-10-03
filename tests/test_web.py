@@ -1155,20 +1155,23 @@ def test_the_title_face_is_the_measured_one_and_nothing_is_vendored() -> None:
     """The serif leads with the face the capture's proportions chose.
 
     Against the capture's x/cap 0.679, asc/cap 1.036 and width/cap 13.75,
-    Times New Roman measured closest of every face installed here, and it is
-    the one face that is present on Windows and macOS and metric-compatible on
-    Linux -- so the three platforms the suite runs on converge on the same
-    letterforms. Reordering that stack silently changes every platform's title
-    and nothing else would notice, which is what this pins.
+    Times New Roman measured closest of every face installed here, and at the
+    size the page renders it hits the capture's own two ratios exactly. It is
+    also present on Windows and macOS, so the two names after it exist for the
+    platforms that lack it -- measured, not assumed: Liberation Serif draws
+    the same width and one pixel less height, inside the harness's tolerance.
+    Reordering that stack silently changes every platform's title and nothing
+    else would notice, which is what this pins.
 
     The second half pins the other half of the decision: no face was vendored,
-    because the only redistributable family installed here is the worst fit
-    measured. A future phase that adds a webfont has to delete this test on
-    purpose rather than acquire one by accident.
+    because both families installed here that could legally be vendored
+    measured worse than the system ones -- Noto Serif 30.1, Liberation Serif
+    21.2, against 7.4. A future phase that adds a webfont has to delete this
+    test on purpose rather than acquire one by accident.
     """
     serif = _tokens()["--font-serif"]
     assert serif.split(",")[0].strip().strip('"') == "Times New Roman", serif
-    # the metric-compatible names that keep Linux on the same letterforms
+    # the names that draw the title where the first one is missing
     assert "Liberation Serif" in serif and "Tinos" in serif
     # nothing is fetched from a font CDN, and no font binary is vendored
     assert "@font-face" not in (_static() / "layout.css").read_text(encoding="utf-8")

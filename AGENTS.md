@@ -43,6 +43,10 @@ python -m pytest tests/test_capture.py -q -s     # -s prints the delta report
 - Two things the drawing cannot tell you, and P19 proved it: ink density and
   stroke contrast. Its title carries ~3× the ink of a 400-weight serif, so both
   are the tracer's pen. Choose faces on proportions only.
+- Proportions quantize: at title sizes x-height and cap height are whole
+  pixels, so a face's x/cap can move 0.03 for half a pixel of size. A face
+  table measured at one size is a filter, not a verdict — measure at the size
+  the page actually renders before believing a ratio.
 - Use `python -m pytest`, not `rtk pytest`. The rtk wrapper in this environment
   swallows stdout, so `-s` never shows the report and a failing run looks
   identical to a passing one. If a command needs an env var and quoting keeps
