@@ -60,6 +60,10 @@
   outline-offset: 1px;
 }
 
+.chromebtn:active {
+  background: var(--wash-current);
+}
+
 .chromebtn svg {
   width: 15px;
   height: 15px;
@@ -164,6 +168,10 @@
 .drawer-link:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+}
+
+.drawer-link:active {
+  background: var(--wash-current);
 }
 
 /* Planned views stay legible rather than greyed to invisibility: "not built

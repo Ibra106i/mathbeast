@@ -53,6 +53,11 @@ html, body {
   white-space: nowrap;
 }
 
+.brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .statusbar {
   display: flex;
   align-items: center;
@@ -118,6 +123,8 @@ html, body {
 }
 
 .navitem:hover { background: var(--wash-hover); color: var(--text); }
+.navitem:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.navitem:active { background: var(--wash-current); }
 .navitem.is-current { background: var(--wash-current); color: var(--text); }
 .navitem.is-planned { color: var(--text-faint); }
 
@@ -242,6 +249,7 @@ code {
 }
 
 .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn:focus-visible:not(:disabled) { outline: 2px solid var(--accent); outline-offset: 1px; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 select {
@@ -253,6 +261,11 @@ select {
   background: var(--surface-raised);
   color: var(--text);
   max-width: 320px;
+}
+
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .htmx-request .btn { opacity: 0.6; }

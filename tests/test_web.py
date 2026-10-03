@@ -446,25 +446,72 @@ def test_colour_lives_in_tokens_and_nowhere_else() -> None:
         assert not found, f"{path.name} defines colour itself: {found}"
 
 
+def _static() -> Path:
+    return Path(__file__).resolve().parents[1] / "mathbeast" / "web" / "static"
+
+
 def _rule_body(path: Path, selector: str) -> str:
     match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", path.read_text(encoding="utf-8"))
     assert match, f"{selector} is not declared in {path.name}"
     return re.sub(r"\s+", " ", match.group(1)).strip()
 
 
-def test_the_drawer_and_the_sidenav_are_one_list_twice() -> None:
-    """Hover, current and planned are styled twice, so one of them is drifting.
+def _stylesheets() -> str:
+    return "\n".join(
+        (_static() / name).read_text(encoding="utf-8") for name in ("layout.css", "mathbeast.css")
+    )
 
-    None of the three states is measured anywhere -- the capture shows no
+
+def test_the_drawer_and_the_sidenav_are_one_list_twice() -> None:
+    """Hover, focus, press, current and planned are styled twice.
+
+    None of the five states is measured anywhere -- the capture shows no
     drawer open and no page other than the home surface -- which leaves
     agreement between the two shells as the only defence against the same
     state quietly meaning two different things.
     """
-    static = Path(__file__).resolve().parents[1] / "mathbeast" / "web" / "static"
-    for state in (":hover", ".is-current", ".is-planned"):
-        drawer = _rule_body(static / "layout.css", ".drawer-link" + state)
-        side = _rule_body(static / "mathbeast.css", ".navitem" + state)
+    for state in (":hover", ":focus-visible", ":active", ".is-current", ".is-planned"):
+        drawer = _rule_body(_static() / "layout.css", ".drawer-link" + state)
+        side = _rule_body(_static() / "mathbeast.css", ".navitem" + state)
         assert drawer == side, f"{state} disagrees: {drawer!r} vs {side!r}"
+
+
+def test_everything_that_takes_focus_says_so_when_it_is_reached() -> None:
+    """Focus is the only one of these states a keyboard user ever sees.
+
+    Hover and press are preferences; a ring on focus is the difference
+    between a control that can be reached and one that can only be clicked.
+    Text fields keep plain `:focus` rather than `:focus-visible`, because
+    clicking into a field should show you the field you are in.
+    """
+    css = _stylesheets()
+    for selector in (
+        ".chromebtn",
+        ".drawer-link",
+        ".navitem",
+        ".brand",
+        ".btn",
+        "select",
+        ".stage-title__text",
+        ".stage-title__input",
+        ".composer-input",
+        ".composer",
+    ):
+        assert re.search(re.escape(selector) + r":focus", css), f"{selector} is silent when focused"
+
+
+def test_a_span_that_is_not_a_control_does_not_pretend_to_be_one() -> None:
+    """The plan once asked for hover, focus and active on the status pill.
+
+    The pill and the backend dot are spans with text in them: no href, no
+    button, no tabindex, nothing to press. The status pill does not exist
+    under any name. Giving the other two a hover state would tell the reader
+    something happens when they point at it, and nothing does.
+    """
+    css = _stylesheets()
+    for selector in (".pill", ".badge", ".backenddot"):
+        found = re.search(re.escape(selector) + r"(?::hover|:focus|:active)", css)
+        assert not found, f"{selector} is styled as though it were a control"
 
 
 def test_no_page_references_an_external_origin(client) -> None:

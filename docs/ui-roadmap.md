@@ -19,7 +19,7 @@ Constraints that apply to every row below:
 | **P9** | This file. |
 | **P10** | Drawer, scrim, status chip and pills onto the measured palette. The composer and tokens were re-based on the capture in P7/P8; these surfaces still carry the pre-measurement treatment. |
 | **P11** | Inspector and the planned-view stubs onto the same palette, so every page speaks one set of tokens rather than the home surface being special. |
-| **P12** | Missing interactive states. `.pill`, `.status-pill` and `.backenddot` have no hover, focus or active treatment; `.navitem` and `.btn` have hover but no `:focus-visible`. |
+| **P12** | Missing interactive states. `.navitem` and `.btn` have hover but no `:focus-visible`; the topbar's brand link and the status bar's `select` have neither; nothing has `:active`. The original row named `.pill`, `.status-pill` and `.backenddot` as controls that needed all three, and none of the three survives inspection: the pill and the dot are spans, and `.status-pill` is not a class in the code at all. Hover on something that cannot be pressed is a promise the page cannot keep. |
 | **P13** | A motion system. Exactly two transitions exist today (`chromebtn`, `drawer-link`); composer, title and pills snap instead of moving. All of it on `--fast` / `--med` / `--ease`, with `prefers-reduced-motion` honoured. |
 | **P14** | Accessibility pass: focus order through the new bottom row, drawer focus containment and return, `aria-live` on the status chip, and a contrast audit of every token pair the page actually uses rather than the two we checked. |
 | **P15** | Responsive. There is not one `@media` rule in either stylesheet. Stage padding, the 597px composer and the bottom row down to 360px, without changing a single measured desktop number. |
