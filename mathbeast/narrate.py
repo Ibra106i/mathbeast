@@ -24,7 +24,8 @@ from typing import Protocol
 from mathbeast.prose import Claim, NarrationReport, check_narration
 from mathbeast.skill import Problem
 
-DEFAULT_OLLAMA_URL = "http://localhost:11434"
+# 127.0.0.1, not localhost: see mathbeast/models/ollama.py for the reason.
+DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 
 
 class Narrator(Protocol):

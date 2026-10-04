@@ -249,7 +249,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_serve = sub.add_parser("serve", help="launch the web UI")
     p_serve.add_argument("--port", type=int, default=8000)
     p_serve.add_argument("--model", default="")
-    p_serve.add_argument("--ollama-url", default="http://localhost:11434")
+    # 127.0.0.1, not localhost: see models/ollama.py for the two seconds a call.
+    p_serve.add_argument("--ollama-url", default="http://127.0.0.1:11434")
     p_serve.add_argument(
         "--no-browser", action="store_true", help="do not open a browser"
     )

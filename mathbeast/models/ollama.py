@@ -20,7 +20,13 @@ from mathbeast.models.metrics import (
     RunningModel,
 )
 
-DEFAULT_URL = "http://localhost:11434"
+# 127.0.0.1, not localhost. On Windows getaddrinfo offers ::1 first, and a
+# refused IPv6 connect on this machine takes two seconds before the IPv4
+# address answers. status() makes three calls in a row, so "localhost" cost
+# every page, every four-second poll, and every model selection six seconds
+# -- long enough for a choice to look like it had not been made. Naming the
+# address skips the lookup and the dead family both.
+DEFAULT_URL = "http://127.0.0.1:11434"
 
 
 class OllamaUnavailable(RuntimeError):
