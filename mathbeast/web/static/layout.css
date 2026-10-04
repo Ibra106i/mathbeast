@@ -467,6 +467,38 @@
   color: var(--text-dim);
 }
 
+/* The same chevron, and now a control. The select is laid over the glyph and
+   made invisible rather than hidden: hidden would take it out of the tab
+   order and out of the accessibility tree, while this keeps both and still
+   paints the drawing the reference measured. It opens the browser's own
+   list wherever the glyph was clicked, so the hit area stays 16px.
+
+   No color and no background are declared here on purpose -- the contrast
+   table is keyed on rules that paint, and an invisible field paints
+   nothing. The ring therefore cannot sit on the field (it would be
+   invisible with it), so it sits on the box the eye can see. */
+.composer-picker {
+  position: relative;
+}
+
+.composer-picker select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-width: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.composer-picker:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .composer-mode {
   display: inline-flex;
   align-items: center;

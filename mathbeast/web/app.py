@@ -158,13 +158,20 @@ def create_app(registry: Registry | None = None) -> FastAPI:
 
     @app.post("/api/model", response_class=HTMLResponse)
     async def api_model(request: Request) -> HTMLResponse:
+        """Switch the model, and answer both pickers in one response.
+
+        The drawer's select swaps the status bar; the composer's select sits
+        outside it and swaps a readout, so the fragment carries the bar and
+        an out-of-band span carries the readout. Each caller asks only for
+        the target it owns and gets the other one for free.
+        """
         model = await posted(request, "model")
         if model:
             reg.set_model(model)
         status = reg.backend.status()
         return templates.TemplateResponse(
             request,
-            "_status_bar.html",
+            "_model_picked.html",
             {**base_context(request), "status": status, "models": status.models},
         )
 

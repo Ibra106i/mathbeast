@@ -58,12 +58,22 @@ def test_the_inspector_is_still_reachable_from_the_root(client) -> None:
     assert 'href="/inspector"' in body
 
 
-def test_the_greeting_is_the_editable_placeholder(client) -> None:
+def test_the_greeting_is_the_editable_placeholder(
+    client, monkeypatch, tmp_path
+) -> None:
     """The default text ships, and ships as something meant to be replaced.
 
     It is not the product name: a greeting the user owns is the point of the
     line, so a fresh install shows the placeholder rather than our branding.
+
+    Which is why this one points the config at a file that does not exist.
+    The claim is about a fresh install, and the machine running the suite
+    may well have a greeting saved in the real one -- reading it there would
+    make this test fail for having a user rather than having a bug.
     """
+    from mathbeast.web import config
+
+    monkeypatch.setattr(config, "CONFIG_FILE", tmp_path / "config.json")
     body = client.get("/").text
     assert "Coffee and Claude time?" in body
     assert 'class="stage-title"' in body
@@ -124,12 +134,15 @@ def test_the_composer_bar_shows_what_is_true_and_hides_what_is_not(
 ) -> None:
     """The bottom row is the capture's chrome, not a set of live controls.
 
-    It is here so there is a row to compare against the reference, and every
-    glyph in it is a button marked disabled. That is the whole difference
-    between a control nobody has wired up yet and one that is broken: the
-    first is a promise about a later phase, the second is a lie about now.
-    The labels beside them are readouts rather than controls, so they stay
-    plain text -- which is also why they can say what they say.
+    Two of its three glyphs are buttons and both ship marked disabled: one
+    that looks live and answers a click with nothing is the same lie the
+    form above posts to /ask to avoid, so each keeps its shape and loses its
+    claim until it has somewhere real to send a click. The third is not a
+    button at all but the model picker, and it ships the other way round --
+    a chevron that opens nothing is the same lie, which is why it exists
+    only when there is a model to list. The labels beside them are readouts
+    rather than controls, so they stay plain text -- which is also why they
+    can say what they say.
     """
     body = client.get("/").text
 
@@ -138,12 +151,13 @@ def test_the_composer_bar_shows_what_is_true_and_hides_what_is_not(
     assert '<span class="composer-tier">Medium</span>' in body
     # The model readout is the model the backend is really running, so the
     # span exists whenever one is configured rather than holding a name
-    # MathBeast has no way to have.
-    assert '<span class="composer-model">' in body
+    # MathBeast has no way to have. Its id is the target of the picker's
+    # response, so it belongs to the contract rather than to the styling.
+    assert '<span class="composer-model" id="composer-model">' in body
 
     for label in ("New question", "Dictate", "Choose model"):
         assert f'aria-label="{label}"' in body
-    assert body.count('type="button" disabled') >= 3
+    assert body.count('type="button" disabled') == 2
 
 
 def test_the_composer_sends_the_question_where_the_truth_is_told(client) -> None:
@@ -428,6 +442,45 @@ def test_selecting_a_model_updates_the_status_bar(client) -> None:
     response = client.post("/api/model", params={"model": "fake-model"})
     assert response.status_code == 200
     assert "fake-model" in response.text
+    # The bar is the fragment, but the composer's readout sits outside it, so
+    # the same answer carries it out of band. Without that the chevron's label
+    # would keep the previous model until the page was reloaded.
+    assert 'id="composer-model"' in response.text
+    assert 'hx-swap-oob="true"' in response.text
+
+
+def test_the_composer_picker_lists_what_the_backend_has(client) -> None:
+    """The chevron on the bottom row opens the drawer's list, not a menu of
+    its own.
+
+    It posts to the same endpoint with the same target, so one line of
+    server code moves the status bar and the readout together. The option
+    that names the running model is the one marked selected, which is the
+    only state the browser needs from us to draw a closed select.
+    """
+    body = client.get("/").text
+    picker = body.split('id="composer-picker"', 1)[1].split("</select>", 1)[0]
+
+    assert 'aria-label="Choose model"' in picker
+    assert 'hx-post="/api/model"' in picker
+    assert 'hx-target="#statusbar"' in picker
+    assert 'value="fake-model"' in picker
+    assert picker.count("<option") >= 1
+
+
+def test_the_composer_has_nothing_to_choose_when_there_are_no_models() -> None:
+    """A picker with no options is the disabled control by another name.
+
+    The stage already says in words that there is nothing to run, so the
+    row keeps two glyphs and the blank where the third was, and the tab
+    order walks past it rather than onto an empty list.
+    """
+    registry = Registry(backend=EmptyBackend(), model="")
+    with fastapi_testclient.TestClient(create_app(registry)) as up:
+        body = up.get("/").text
+
+    assert 'id="composer-picker"' not in body
+    assert "Choose model" not in body
 
 
 def test_the_model_picker_its_body_actually_reaches_the_registry() -> None:
@@ -680,7 +733,7 @@ def test_the_home_surface_tabs_in_reading_order(client) -> None:
         ("Ask a question", False),
         ("New question", True),
         ("Dictate", True),
-        ("Choose model", True),
+        ("Choose model", False),
     ]
 
 

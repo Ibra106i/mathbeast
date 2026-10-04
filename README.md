@@ -211,7 +211,11 @@ table and fails if the code and this list drift apart.
 |---|---|---|
 | New question | composer bar | a pack loader — there is nothing yet to load |
 | Dictate | composer bar | a second input mode — the engine takes text only |
-| Choose model | composer bar | a pack loader — one backend is configured per install |
+
+The composer's chevron is the control on that bar that does work. It is a
+select over the models the backend reports, and it posts to `/api/model` —
+the same endpoint the drawer's model list posts to, so both move the running
+model together. With no models installed it is not rendered at all.
 
 One control is disabled for the opposite reason. The inspector's **measure
 tok/s** is disabled exactly while no model is loaded or the backend is away,

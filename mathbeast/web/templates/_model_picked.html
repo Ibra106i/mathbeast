@@ -1,0 +1,24 @@
+{#
+  What POST /api/model answers with: the status bar as the fragment, plus the
+  composer's readout as an out-of-band swap.
+
+  Out of band because the two pickers swap different things. The drawer's
+  select replaces #statusbar; the composer's select sits outside that bar, so
+  a response that carried only the bar would leave the model name beside the
+  chevron stale until the page was reloaded. One response moves both, and
+  neither picker has to know the other exists.
+
+  Deliberately not inside _status_bar.html: that file is also what the
+  four-second poll swaps, so emitting an out-of-band element from there would
+  make every poll claim a target that only the home surface carries -- and
+  drop it silently on the pages that do not.
+
+  Only when a model is configured. The span does not exist on a stage that
+  never had one, and htmx removes an out-of-band element whose target is
+  missing rather than leaving it somewhere it cannot land.
+#}
+{% include "_status_bar.html" %}
+{% if model %}
+<span class="composer-model" id="composer-model"
+      hx-swap-oob="true">{{ model }}</span>
+{% endif %}

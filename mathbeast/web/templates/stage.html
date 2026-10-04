@@ -120,10 +120,22 @@
 
           {# The bottom row from the capture.
 
-             The three glyphs are buttons and all three ship disabled: one
+             Two of the three glyphs are buttons and both ship disabled: one
              that looks live and answers a click with nothing is the same lie
              the form above posts to /ask to avoid, so each keeps its shape
              and loses its claim until it has somewhere real to send a click.
+
+             The third finally has somewhere. The chevron is a <select> laid
+             over the glyph rather than a second icon beside it: the browser
+             owns the list, the arrow keys and the announcement, and the row
+             keeps the shape the reference draws. It posts to the endpoint
+             the drawer's model list posts to, whose answer carries the
+             status bar as its fragment and the readout below as an
+             out-of-band swap, so choosing here moves both at once and
+             without leaving the field. With no models installed the whole
+             control is withheld -- a disabled chevron would be the exact lie
+             this row stopped telling, and the stage already says in words
+             that there is nothing to run.
 
              The rest is readout. The model is whichever one the backend is
              actually running; "Chat" and "Medium" name the input mode and the
@@ -136,13 +148,27 @@
               <span class="composer-mode">Chat</span>
             </div>
             <div class="composer-bar__end">
-              {% if model %}<span class="composer-model">{{ model }}</span>{% endif %}
+              {% if model %}
+                <span class="composer-model" id="composer-model">{{ model }}</span>
+              {% endif %}
               <span class="composer-tier">Medium</span>
               <span class="composer-tools">
                 <button class="composer-icon" type="button" disabled
                         aria-label="Dictate">{{ icon("mic") }}</button>
-                <button class="composer-icon composer-icon--dim" type="button" disabled
-                        aria-label="Choose model">{{ icon("chevron") }}</button>
+                {% if models %}
+                  <span class="composer-icon composer-icon--dim composer-picker">
+                    <select id="composer-picker"
+                            name="model" aria-label="Choose model"
+                            hx-post="/api/model" hx-target="#statusbar"
+                            hx-swap="outerHTML">
+                      {% for m in models %}
+                        <option value="{{ m.name }}"
+                                {% if m.name == model %}selected{% endif %}>{{ m.name }}{% if m.parameter_size %} ({{ m.parameter_size }}){% endif %}</option>
+                      {% endfor %}
+                    </select>
+                    {{ icon("chevron") }}
+                  </span>
+                {% endif %}
               </span>
             </div>
           </div>

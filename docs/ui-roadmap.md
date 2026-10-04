@@ -32,13 +32,15 @@ Constraints that apply to every row below:
 
 ## Not scheduled
 
-Enabling the three controls that ship `disabled` — **New question**,
-**Dictate** and **Choose model**. Each needs something real to do first: a
-pack loader behind two of them, a second input mode behind the third. Deciding
-*that* is a product question, not a styling phase. They are the three things
+Enabling the two controls that still ship `disabled` — **New question** and
+**Dictate**. Each needs something real to do first: a
+pack loader behind one, a second input mode behind the other. Deciding
+*that* is a product question, not a styling phase. They are what
 the page deliberately does not claim, and the README's "What the page does not
 claim yet" table lists each one against the code — a test reads that table and
-fails when a control and its row drift apart.
+fails when a control and its row drift apart. The third, **Choose model**,
+shipped: it is a select over what `GET /api/status` reports and posts to
+`/api/model`, the path the drawer's list already used.
 
 **Chat** and **Medium**, the mode and tier words beside them, were named here
 too and should not have been. They are spans, not controls: there is no
